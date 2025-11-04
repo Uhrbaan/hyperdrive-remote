@@ -1,6 +1,6 @@
 package main
 
-// Remote-Control for: Discovery (true/false)
+// Remote-Control for: Discovery (true/false) ✅
 // Remote-Control for: Connect of a/all/specific car (true/false)
 // Remote-Control for: Driving the car (Speed)
 // Remote-Control for: Lane-change (Steering)
@@ -13,7 +13,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"slices"
 	"strings"
 	"syscall"
 
@@ -29,8 +28,8 @@ const (
 
 func main() {
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker(rpiIp + mqttPort)
-	// opts.AddBroker("tcp://localhost:1883")
+	// opts.AddBroker(rpiIp + mqttPort)
+	opts.AddBroker("tcp://localhost:1883")
 	opts.SetClientID(uuid.NewString())
 
 	client := mqtt.NewClient(opts)
@@ -44,15 +43,19 @@ func main() {
 	go func() {
 		reader := bufio.NewReader(os.Stdin)
 		for {
-			fmt.Println("Please enter [true|false].")
+			fmt.Println("Please enter a command of the shape 'name=value' and press Enter.")
 			text, _ := reader.ReadString('\n')
 			text = strings.TrimSpace(text)
-			fmt.Println("User entered:", text+".")
-			discover := false
-			if slices.Contains([]string{"true", "True", "t", "T"}, text) {
-				discover = true
+			values := strings.Split(text, "=")
+
+			switch values[0] {
+			case "discover":
+				discover := false
+				if values[1] == "true" {
+					discover = true
+				}
+				remote.Discover(discover)
 			}
-			remote.Discover(discover)
 		}
 	}()
 
