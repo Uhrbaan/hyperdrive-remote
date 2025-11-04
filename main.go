@@ -23,23 +23,28 @@ import (
 const (
 	rpiIp    = "10.42.0.1"
 	mqttPort = ":1883"
-	// docsPort = ":18443"
 )
 
 func main() {
+	// Configure the mosquitto client
 	opts := mqtt.NewClientOptions()
-	// opts.AddBroker(rpiIp + mqttPort)
-	opts.AddBroker("tcp://localhost:1883")
+	opts.AddBroker(rpiIp + mqttPort)
 	opts.SetClientID(uuid.NewString())
 
+	// Connect to the broker and initialize the client
 	client := mqtt.NewClient(opts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		log.Fatal("Could not establish connection with MQTT server: ", token.Error())
 	}
 
-	remote := remote.Remote{Client: client}
-	remote.SyncWith("Anki/Hosts/U/hyperdrive/I", true)
+	// Disconnect cleanly from the broker when closing the program
+	defer client.Disconnect(0)
 
+	// Create a new Remote object and sync the discover event with the rest of the system
+	remote := remote.Remote{Client: client}
+	remote.SyncDiscoverWith("Anki/Hosts/U/hyperdrive/I", true)
+
+	// Run function in background that listens on the console for commands
 	go func() {
 		reader := bufio.NewReader(os.Stdin)
 		for {
@@ -59,8 +64,9 @@ func main() {
 		}
 	}()
 
+	// Block the main function from finishing until it recieves an interrupt (ctrl-C)
 	quit := make(chan os.Signal, 1)
+	defer close(quit)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit // block until quit signal
-	log.Println("Recieved quit signal. Exiting.")
+	<-quit
 }
