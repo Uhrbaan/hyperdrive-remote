@@ -7,10 +7,14 @@ package main
 // Remote-Control for: Lights
 
 import (
-	"encoding/json"
+	"bufio"
+	"fmt"
+	"hyperdrive/remote/remote"
 	"log"
 	"os"
 	"os/signal"
+	"slices"
+	"strings"
 	"syscall"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -23,14 +27,10 @@ const (
 	// docsPort = ":18443"
 )
 
-type Subscription struct {
-	Topic     string `json:"topic"`
-	Subscribe bool   `json:"subscribe"`
-}
-
 func main() {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(rpiIp + mqttPort)
+	// opts.AddBroker("tcp://localhost:1883")
 	opts.SetClientID(uuid.NewString())
 
 	client := mqtt.NewClient(opts)
@@ -38,42 +38,23 @@ func main() {
 		log.Fatal("Could not establish connection with MQTT server: ", token.Error())
 	}
 
-	payload, _ := json.Marshal(Subscription{
-		Topic:     "RemoteControl/+/E/hosts/discover",
-		Subscribe: true,
-	})
+	remote := remote.Remote{Client: client}
+	remote.SyncWith("Anki/Hosts/U/hyperdrive/I", true)
 
-	if token := client.Publish("Anki/Hosts/U/I", 1, false, payload); token.Wait() && token.Error() != nil {
-		log.Fatal("Failed to publish to Anki/Hosts/U/I : ", token.Error())
-	}
-	log.Println("Managed to publish", string(payload))
-
-	topics := []string{
-		"RemoteControl/+/E/vehicles/connect/#",
-		"RemoteControl/+/E/vehicles/lights/#",
-		"RemoteControl/+/E/vehicles/laneChange/#",
-		"RemoteControl/+/E/vehicles/speed/#",
-		"RemoteControl/+/E/vehicles/panic/#",
-		"RemoteControl/+/E/vehicles/panic/#",
-	}
-
-	for _, t := range topics {
-		payload, _ := json.Marshal(Subscription{
-			Topic:     t,
-			Subscribe: true,
-		})
-		if token := client.Publish("Anki/Hosts/U/I", 1, false, payload); token.Wait() && token.Error() != nil {
-			log.Fatal("Failed to publish to Anki/Hosts/U/I : ", token.Error())
+	go func() {
+		reader := bufio.NewReader(os.Stdin)
+		for {
+			fmt.Println("Please enter [true|false].")
+			text, _ := reader.ReadString('\n')
+			text = strings.TrimSpace(text)
+			fmt.Println("User entered:", text+".")
+			discover := false
+			if slices.Contains([]string{"true", "True", "t", "T"}, text) {
+				discover = true
+			}
+			remote.Discover(discover)
 		}
-		log.Println("Managed to publish", string(payload), "on", t)
-	}
-
-	if token := client.Subscribe("Anki/Hosts/U/hyperdrive/E/vehicle/discovered/#", 1, func(client mqtt.Client, message mqtt.Message) {
-		msg := message.Payload()
-		log.Println(string(msg), "on", message.Topic())
-	}); token.Wait() && token.Error() != nil {
-		log.Fatal("Failed to subscribe to discovered vehicles.", token.Error())
-	}
+	}()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
