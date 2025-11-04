@@ -1,5 +1,11 @@
 package main
 
+// Remote-Control for: Discovery (true/false) ✅
+// Remote-Control for: Connect of a/all/specific car (true/false)
+// Remote-Control for: Driving the car (Speed)
+// Remote-Control for: Lane-change (Steering)
+// Remote-Control for: Lights
+
 import (
 	"log"
 
