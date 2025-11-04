@@ -1,0 +1,222 @@
+package main
+
+import (
+	"bufio"
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/google/uuid"
+)
+
+const (
+	rpiIp    = "10.42.0.1"
+	mqttPort = ":1883"
+)
+
+type intent struct {
+	Type    string      `json:"type"`
+	Payload interface{} `json:"payload"`
+}
+
+// Common payload types
+type discoverPayload struct {
+	Topic     string `json:"topic"`
+	Subscribe bool   `json:"subscribe"`
+}
+
+type subscribePayload = discoverPayload
+
+// Vehicle intents
+type connectPayload struct {
+	Value bool `json:"value"`
+}
+
+type speedPayload struct {
+	Velocity     int `json:"velocity"`
+	Acceleration int `json:"acceleration"`
+}
+
+type lanePayload struct {
+	Velocity         int     `json:"velocity"`
+	Acceleration     int     `json:"acceleration"`
+	Offset           float64 `json:"offset"`
+	OffsetFromCenter float64 `json:"offsetFromCenter"`
+}
+
+type lightEffect struct {
+	Effect    string `json:"effect"`
+	Start     int    `json:"start"`
+	End       int    `json:"end"`
+	Frequency int    `json:"frequency"`
+}
+
+type lightsPayload struct {
+	FrontGreen  *lightEffect `json:"frontGreen"`
+	FrontRed    *lightEffect `json:"frontRed"`
+	Tail        *lightEffect `json:"tail"`
+	EngineRed   *lightEffect `json:"engineRed"`
+	EngineGreen *lightEffect `json:"engineGreen"`
+	EngineBlue  *lightEffect `json:"engineBlue"`
+}
+
+func publish(client mqtt.Client, topic string, v interface{}) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	token := client.Publish(topic, 0, false, b)
+	if ok := token.WaitTimeout(5 * time.Second); !ok {
+		log.Println("publish timeout")
+	}
+	return token.Error()
+}
+
+func publishDiscoverSubscription(client mqtt.Client, subscribe bool) error {
+	msg := intent{
+		Type: "discoverSubscription",
+		Payload: discoverPayload{
+			Topic:     "RemoteControl/+/E/hosts/discover",
+			Subscribe: subscribe,
+		},
+	}
+	return publish(client, "Anki/Hosts/U/I", msg)
+}
+
+func publishVehicleSubscription(client mqtt.Client, subType string, topic string, subscribe bool) error {
+	msg := intent{
+		Type: subType,
+		Payload: subscribePayload{
+			Topic:     topic,
+			Subscribe: subscribe,
+		},
+	}
+	return publish(client, "Anki/Vehicles/U/I", msg)
+}
+
+func sendVehicleIntent(client mqtt.Client, vehicleID string, it intent) error {
+	target := "Anki/Vehicles/U/I"
+	if vehicleID != "" {
+		target = fmt.Sprintf("Anki/Vehicles/%s/I", vehicleID)
+	}
+	return publish(client, target, it)
+}
+
+func readLine(prompt string) string {
+	fmt.Print(prompt)
+	r := bufio.NewReader(os.Stdin)
+	s, _ := r.ReadString('\n')
+	return strings.TrimSpace(s)
+}
+
+func main() {
+	opts := mqtt.NewClientOptions()
+	opts.AddBroker(rpiIp + mqttPort)
+	opts.SetClientID(uuid.NewString())
+
+	client := mqtt.NewClient(opts)
+	if token := client.Connect(); token.Wait() && token.Error() != nil {
+		log.Fatal("Could not establish connection with MQTT server: ", token.Error())
+	}
+
+	defer func() {
+		client.Disconnect(250)
+	}()
+
+	// Simple CLI loop
+	for {
+		fmt.Println("\nRemoteControl demo — choose an action:")
+		fmt.Println("1) Toggle discovery subscription (hosts)")
+		fmt.Println("2) Toggle vehicle subscriptions (connect/lights/lane/speed)")
+		fmt.Println("3) Send connect (all/specific vehicle)")
+		fmt.Println("4) Send speed command")
+		fmt.Println("5) Send lane-change command")
+		fmt.Println("6) Send lights command")
+		fmt.Println("7) Quit")
+
+		choice := readLine("> ")
+		switch choice {
+		case "1":
+			v := readLine("Subscribe for discovery? (y/n): ")
+			sub := strings.ToLower(v) == "y"
+			if err := publishDiscoverSubscription(client, sub); err != nil {
+				log.Println("error publishing discoverSubscription:", err)
+			} else {
+				log.Println("discoverSubscription published")
+			}
+		case "2":
+			fmt.Println("Which subscription type? (connect|lights|lane|speed)")
+			st := readLine("type: ")
+			fmt.Println("Topic filter (leave empty for default RemoteControl/+/E/vehicles/", st, "/#):")
+			t := readLine("topic (leave empty for default): ")
+			if t == "" {
+				t = fmt.Sprintf("RemoteControl/+/E/vehicles/%s/#", st)
+			}
+			v := readLine("Subscribe? (y/n): ")
+			sub := strings.ToLower(v) == "y"
+			subType := st + "Subscription"
+			if err := publishVehicleSubscription(client, subType, t, sub); err != nil {
+				log.Println("error publishing vehicle subscription:", err)
+			} else {
+				log.Println("vehicle subscription published")
+			}
+		case "3":
+			id := readLine("Vehicle ID (leave empty = all): ")
+			v := readLine("Connect? (y/n): ")
+			val := strings.ToLower(v) == "y"
+			it := intent{Type: "connect", Payload: connectPayload{Value: val}}
+			if err := sendVehicleIntent(client, id, it); err != nil {
+				log.Println("error sending connect intent:", err)
+			} else {
+				log.Println("connect intent sent")
+			}
+		case "4":
+			id := readLine("Vehicle ID (leave empty = all): ")
+			velS := readLine("Velocity (int): ")
+			accS := readLine("Acceleration (int): ")
+			vel, _ := strconv.Atoi(velS)
+			acc, _ := strconv.Atoi(accS)
+			it := intent{Type: "speed", Payload: speedPayload{Velocity: vel, Acceleration: acc}}
+			if err := sendVehicleIntent(client, id, it); err != nil {
+				log.Println("error sending speed intent:", err)
+			} else {
+				log.Println("speed intent sent")
+			}
+		case "5":
+			id := readLine("Vehicle ID (leave empty = all): ")
+			velS := readLine("Velocity (int): ")
+			accS := readLine("Acceleration (int): ")
+			offS := readLine("Offset (float): ")
+			vel, _ := strconv.Atoi(velS)
+			acc, _ := strconv.Atoi(accS)
+			off, _ := strconv.ParseFloat(offS, 64)
+			it := intent{Type: "lane", Payload: lanePayload{Velocity: vel, Acceleration: acc, Offset: off, OffsetFromCenter: 0}}
+			if err := sendVehicleIntent(client, id, it); err != nil {
+				log.Println("error sending lane intent:", err)
+			} else {
+				log.Println("lane intent sent")
+			}
+		case "6":
+			id := readLine("Vehicle ID (leave empty = all): ")
+			// For demo: simple frontGreen steady effect
+			ef := &lightEffect{Effect: "steady", Start: 0, End: 15, Frequency: 0}
+			lp := lightsPayload{FrontGreen: ef}
+			it := intent{Type: "lights", Payload: lp}
+			if err := sendVehicleIntent(client, id, it); err != nil {
+				log.Println("error sending lights intent:", err)
+			} else {
+				log.Println("lights intent sent")
+			}
+		case "7":
+			log.Println("quitting")
+			return
+		default:
+			fmt.Println("unknown choice")
+		}
+	}
+}
