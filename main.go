@@ -1,7 +1,7 @@
 package main
 
 import (
-	"hyperdrive/remote/hyperdrive"
+	// "hyperdrive/remote/hyperdrive"
 	"log"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -24,9 +24,4 @@ func main() {
 		log.Fatal("Could not establish connection with MQTT server: ", token.Error())
 	}
 
-	host := hyperdrive.DefaultHost()
-	topic := host.StatusIntendedDiscoverSubscriptionTopic()
-	content := hyperdrive.DiscoverSubscriptionIntentPayload{
-		Topic: 
-	}
 }
