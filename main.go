@@ -21,7 +21,8 @@ import (
 )
 
 const (
-	rpiIp    = "10.42.0.1"
+	rpiIp = "10.42.0.1"
+	// rpiIp    = "test.mosquitto.org"
 	mqttPort = 1883
 )
 
@@ -31,10 +32,6 @@ const (
 )
 
 func main() {
-	remote.App()
-}
-
-func _main() {
 	go remote.StartRemote(rpiIp, mqttPort, uuid.NewString())
 
 	// Make a new client to send the necessary topic, since it is decoupled
