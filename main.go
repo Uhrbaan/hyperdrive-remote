@@ -1,7 +1,7 @@
 package main
 
 // Remote-Control for: Discovery (true/false) ✅
-// Remote-Control for: Connect of a/all/specific car (true/false)
+// Remote-Control for: Connect of a/all/specific car (true/false) ✅ (kinda...)
 // Remote-Control for: Driving the car (Speed)
 // Remote-Control for: Lane-change (Steering)
 // Remote-Control for: Lights
@@ -25,9 +25,16 @@ const (
 	mqttPort = 1883
 )
 
-const defaultVehiclesDiscoverTopic = "Anki/Hosts/U/hyperdrive/E/vehicle/discovered/#"
+const (
+	vehiclesDiscoverTopic        = "Anki/Hosts/U/hyperdrive/E/vehicle/discovered/#"
+	ankiVehicleSubscriptionTopic = "Anki/Vehicles/U/%s/I"
+)
 
 func main() {
+	remote.App()
+}
+
+func _main() {
 	go remote.StartRemote(rpiIp, mqttPort, uuid.NewString())
 
 	// Make a new client to send the necessary topic, since it is decoupled
@@ -42,34 +49,24 @@ func main() {
 	}
 	log.Println("Connected to mosquitto broker.")
 
-	time.Sleep(1 * time.Second) // waiting a second else it's too fast for the remote process
+	// Sending the discover subscription. Waiting to make sure that is
+	remote.SyncSubscription(client, "discoverSubscription", "Anki/Hosts/U/I", remote.DiscoverTopic, true)
+	log.Println("Sent discover subscription.")
+	time.Sleep(2 * time.Second)
 
 	// Sending the required topic to the remote.
-	payload, _ := json.Marshal(remote.DiscoverVehiclesTopic{Topic: defaultVehiclesDiscoverTopic})
+	payload, _ := json.Marshal(remote.DiscoverVehiclesTopic{Topic: vehiclesDiscoverTopic})
 	client.Publish(remote.ListenDiscoverTopicTopic, 1, false, payload)
 	log.Println()
 
-	// Run function in background that listens on the console for commands
-	// go func() {
-	// 	reader := bufio.NewReader(os.Stdin)
-	// 	for {
-	// 		fmt.Println("Please enter a command of the shape 'name=value' and press Enter.")
-	// 		text, _ := reader.ReadString('\n')
-	// 		text = strings.TrimSpace(text)
-	// 		values := strings.Split(text, "=")
+	// // Enableing the subscriptions
+	// for vehicle := range vehicleListCh {
+	// 	remote.SyncSubscription(client, "connectSubscription", fmt.Sprintf(ankiVehicleSubscriptionTopic, vehicle), fmt.Sprintf(remote.ConnectTopic, vehicle), true)
+	// 	remote.SyncSubscription(client, "speedSubscription", fmt.Sprintf(ankiVehicleSubscriptionTopic, vehicle), fmt.Sprintf(remote.SpeedTopic, vehicle), true)
+	// }
 
-	// 		switch values[0] {
-	// 		case "discover":
-	// 			discover := false
-	// 			if values[1] == "true" {
-	// 				discover = true
-	// 			}
-	// 			go r.Discover(discover)
-	// 			data, _ := json.Marshal(remote.DiscoverVehiclesTopic{Topic: defaultVehiclesDiscoverTopic})
-	// 			client.Publish(remote.ListenDiscoverTopicTopic, 1, false, data)
-	// 		}
-	// 	}
-	// }()
+	// // Tell remote process that all the subscriptions went through
+	// waitForSubscriptions <- true
 
 	// Block execution until somebody types ctrl-c.
 	quit := make(chan os.Signal, 1)
