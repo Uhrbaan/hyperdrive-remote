@@ -8,7 +8,7 @@ package main
 
 import (
 	"encoding/json"
-	"hyperdrive/remote/remote"
+	"hyperdrive/remote/hyperdrive"
 	"log"
 	"os"
 	"os/signal"
@@ -32,7 +32,7 @@ const (
 )
 
 func main() {
-	go remote.StartRemote(rpiIp, mqttPort, uuid.NewString())
+	go hyperdrive.StartRemote(rpiIp, mqttPort, uuid.NewString())
 
 	// Make a new client to send the necessary topic, since it is decoupled
 	opts := mqtt.NewClientOptions()
@@ -47,13 +47,13 @@ func main() {
 	log.Println("Connected to mosquitto broker.")
 
 	// Sending the discover subscription. Waiting to make sure that is
-	remote.SyncSubscription(client, "discoverSubscription", "Anki/Hosts/U/I", remote.DiscoverTopic, true)
+	hyperdrive.SyncSubscription(client, "discoverSubscription", "Anki/Hosts/U/I", hyperdrive.DiscoverTopic, true)
 	log.Println("Sent discover subscription.")
 	time.Sleep(2 * time.Second)
 
 	// Sending the required topic to the remote.
-	payload, _ := json.Marshal(remote.DiscoverVehiclesTopic{Topic: vehiclesDiscoverTopic})
-	client.Publish(remote.ListenDiscoverTopicTopic, 1, false, payload)
+	payload, _ := json.Marshal(hyperdrive.DiscoverVehiclesTopic{Topic: vehiclesDiscoverTopic})
+	client.Publish(hyperdrive.ListenDiscoverTopicTopic, 1, false, payload)
 	log.Println()
 
 	// // Enableing the subscriptions
