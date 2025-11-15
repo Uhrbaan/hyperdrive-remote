@@ -36,30 +36,9 @@ type rawVehicleData struct {
 	Value     rawVehicleDataValue `json:"value"`
 }
 
-func discover(client mqtt.Client) (map[string]Vehicle, error) {
-	vehicleListTopicCh := make(chan string, 1)
-	defer close(vehicleListTopicCh)
-
-	client.Subscribe(ListenDiscoverTopicTopic, 1, func(client mqtt.Client, msg mqtt.Message) {
-		defer client.Unsubscribe(ListenDiscoverTopicTopic)
-		log.Println("Got", string(msg.Payload()), "!")
-
-		var data DiscoverVehiclesTopic
-		err := json.Unmarshal(msg.Payload(), &data)
-		if err != nil {
-			log.Println("Failed to recieve a topic.")
-			vehicleListTopicCh <- ""
-		}
-
-		vehicleListTopicCh <- data.Topic
-	})
-
-	// Before doing anything, waiting for topic to be sent.
-	log.Println("Waiting for a vehicle list topic to be sent.")
-	vehicleListTopic := <-vehicleListTopicCh
-
+func discover(client mqtt.Client, vehicleDiscoverTopic string) (map[string]Vehicle, error) {
 	// Now, send a discovery signal
-	vehicleList, err := discoverVehicles(client, vehicleListTopic, true)
+	vehicleList, err := discoverVehicles(client, vehicleDiscoverTopic, true)
 	if err != nil {
 		println("Could not discover vehicles:", err)
 		return nil, err

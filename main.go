@@ -7,14 +7,9 @@ package main
 // Remote-Control for: Lights
 
 import (
-	"encoding/json"
 	"hyperdrive/remote/hyperdrive"
 	"log"
-	"os"
-	"os/signal"
 	"strconv"
-	"syscall"
-	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
@@ -26,14 +21,7 @@ const (
 	mqttPort = 1883
 )
 
-const (
-	vehiclesDiscoverTopic        = "Anki/Hosts/U/hyperdrive/E/vehicle/discovered/#"
-	ankiVehicleSubscriptionTopic = "Anki/Vehicles/U/%s/I"
-)
-
 func main() {
-	go hyperdrive.StartRemote(rpiIp, mqttPort, uuid.NewString())
-
 	// Make a new client to send the necessary topic, since it is decoupled
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(rpiIp + ":" + strconv.Itoa(mqttPort))
@@ -44,30 +32,8 @@ func main() {
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		log.Fatal("Could not establish connection with MQTT server: ", token.Error())
 	}
-	log.Println("Connected to mosquitto broker.")
+	log.Println("Connected to mosquitto broker on", rpiIp+":"+strconv.Itoa(mqttPort))
 
-	// Sending the discover subscription. Waiting to make sure that is
-	hyperdrive.SyncSubscription(client, "discoverSubscription", "Anki/Hosts/U/I", hyperdrive.DiscoverTopic, true)
-	log.Println("Sent discover subscription.")
-	time.Sleep(2 * time.Second)
-
-	// Sending the required topic to the remote.
-	payload, _ := json.Marshal(hyperdrive.DiscoverVehiclesTopic{Topic: vehiclesDiscoverTopic})
-	client.Publish(hyperdrive.ListenDiscoverTopicTopic, 1, false, payload)
-	log.Println()
-
-	// // Enableing the subscriptions
-	// for vehicle := range vehicleListCh {
-	// 	remote.SyncSubscription(client, "connectSubscription", fmt.Sprintf(ankiVehicleSubscriptionTopic, vehicle), fmt.Sprintf(remote.ConnectTopic, vehicle), true)
-	// 	remote.SyncSubscription(client, "speedSubscription", fmt.Sprintf(ankiVehicleSubscriptionTopic, vehicle), fmt.Sprintf(remote.SpeedTopic, vehicle), true)
-	// }
-
-	// // Tell remote process that all the subscriptions went through
-	// waitForSubscriptions <- true
-
-	// Block execution until somebody types ctrl-c.
-	quit := make(chan os.Signal, 1)
-	defer close(quit)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	// Launch the graphical app, blocking
+	hyperdrive.App(client)
 }

@@ -3,6 +3,7 @@ package hyperdrive
 import (
 	"log"
 	"strings"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -169,32 +170,84 @@ func carCard(client mqtt.Client, target string) fyne.CanvasObject {
 	return widget.NewCard(target, "", cardContent)
 }
 
+func initialPrompt(window fyne.Window, client mqtt.Client) fyne.CanvasObject {
+
+	hostIntentTopicEntry := widget.NewEntry()
+	hostIntentTopicEntry.SetText("Anki/Hosts/U/I")
+	vehicleIntentTopicFormatEntry := widget.NewEntry()
+	vehicleIntentTopicFormatEntry.SetText("Anki/Vehicles/U/%s/I")
+	hostDiscoverVehicleTopicEntry := widget.NewEntry()
+	hostDiscoverVehicleTopicEntry.SetText("Anki/Hosts/U/hyperdrive/E/vehicle/discovered/#")
+
+	form := &widget.Form{
+		Items: []*widget.FormItem{
+			{
+				Text:   "Topic for the Anki Host intent:",
+				Widget: hostIntentTopicEntry,
+			},
+			{
+				Text:   "Topic format (where %s is the car id) of the car intents:",
+				Widget: vehicleIntentTopicFormatEntry,
+			},
+			{
+				Text:   "Topic where to discover vehicles",
+				Widget: hostDiscoverVehicleTopicEntry,
+			},
+		},
+		OnSubmit: func() {
+			log.Println(hostIntentTopicEntry.Text, "\n", vehicleIntentTopicFormatEntry, "\n", hostDiscoverVehicleTopicEntry)
+
+			err := SyncSubscription(client, "discoverSubscription", hostIntentTopicEntry.Text, DiscoverTopic, true)
+			if err != nil {
+				log.Fatal("Could not sync with the discover subscription.")
+			}
+
+			// Wait half a second to be sure that the subscription went trhough.
+			time.Sleep(500 * time.Millisecond)
+
+			vehicleList, err := InitializeRemote(client, hostDiscoverVehicleTopicEntry.Text, vehicleIntentTopicFormatEntry.Text)
+			if err != nil {
+				log.Fatal("Could not initialize the remote:", err)
+			}
+
+			// Build a list of card widgets, one for each car
+			carCards := []fyne.CanvasObject{}
+			for _, car := range vehicleList {
+				carCards = append(carCards, carCard(client, car))
+			}
+
+			// Place all car cards in a VBox, which is then put in a VScroll
+			content := container.NewVScroll(
+				container.NewVBox(carCards...),
+			)
+
+			// replace the form by the cars
+			window.SetContent(content)
+
+			// disconnect from the cars if the app is closed
+			window.SetOnClosed(func() {
+				for _, car := range vehicleList {
+					connect(client, false, car)
+				}
+			})
+		},
+	}
+
+	return form
+}
+
 // App is the main Fyne application entry point.
 // This replaces the original App() function.
-func App(client mqtt.Client, cars []string) {
+func App(client mqtt.Client) {
+	client.Publish("HelloWorld", 1, false, "Hello, world !")
+
 	a := app.New()
 	w := a.NewWindow("Hyperdrive RemoteControl")
 
-	// Build a list of card widgets, one for each car
-	carCards := []fyne.CanvasObject{}
-	for _, car := range cars {
-		carCards = append(carCards, carCard(client, car))
-	}
-
-	// Place all car cards in a VBox, which is then put in a VScroll
-	content := container.NewVScroll(
-		container.NewVBox(carCards...),
-	)
-
-	w.SetContent(content)
-
-	// Set the disconnect logic to run when the window is closed
-	w.SetOnClosed(func() {
-		for _, car := range cars {
-			connect(client, false, car)
-		}
-	})
-
+	// First, show a form where the user has to insert the different topics
+	// This makes it decoupled (?)
+	form := initialPrompt(w, client)
+	w.SetContent(form)
 	w.Resize(fyne.NewSize(450, 700))
 	w.ShowAndRun()
 }

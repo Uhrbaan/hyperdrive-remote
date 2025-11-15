@@ -10,7 +10,6 @@ The Anki service cans subscribe to any of its branches and will mirror it.
 import (
 	"fmt"
 	"log"
-	"strconv"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
@@ -38,40 +37,24 @@ type SubscriptionPayload struct {
 	Subscribe bool   `json:"subscribe"` // {true|false} # Default: false
 }
 
-const (
-	ankiVehicleSubscriptionTopic = "Anki/Vehicles/U/%s/I"
-)
-
-func StartRemote(address string, port int, uuid string) {
-	opts := mqtt.NewClientOptions()
-	opts.AddBroker(address + ":" + strconv.Itoa(port))
-	opts.SetClientID(uuid)
-
-	// Connect to the broker and initialize the client
-	client := mqtt.NewClient(opts)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		log.Fatal("Could not establish connection with MQTT server: ", token.Error())
-	}
-	log.Println("Connected to mosquitto broker.")
-
+func InitializeRemote(client mqtt.Client, vehicleDiscoverTopic string, vehicleSubscriptionTopicFormat string) ([]string, error) {
 	// start By discovering available vehicles
-	vehicleMap, err := discover(client)
+	vehicleMap, err := discover(client, vehicleDiscoverTopic)
 	if err != nil {
-		log.Fatal("Could not discover vehicles:", err)
+		return nil, err
 	}
 	log.Println(vehicleMap)
 
 	var vehicleList []string
-	for key := range vehicleMap {
-		vehicleList = append(vehicleList, key)
-	}
+	for vehicle := range vehicleMap {
+		err1 := SyncSubscription(client, "connectSubscription", fmt.Sprintf(vehicleSubscriptionTopicFormat, vehicle), fmt.Sprintf(ConnectTopic, vehicle), true)
+		err2 := SyncSubscription(client, "speedSubscription", fmt.Sprintf(vehicleSubscriptionTopicFormat, vehicle), fmt.Sprintf(SpeedTopic, vehicle), true)
+		err3 := SyncSubscription(client, "lightsSubscription", fmt.Sprintf(vehicleSubscriptionTopicFormat, vehicle), fmt.Sprintf(LightsTopic, vehicle), true)
 
-	// Initialize all the subscriptions because fuch it
-	for _, vehicle := range vehicleList {
-		SyncSubscription(client, "connectSubscription", fmt.Sprintf(ankiVehicleSubscriptionTopic, vehicle), fmt.Sprintf(ConnectTopic, vehicle), true)
-		SyncSubscription(client, "speedSubscription", fmt.Sprintf(ankiVehicleSubscriptionTopic, vehicle), fmt.Sprintf(SpeedTopic, vehicle), true)
-		SyncSubscription(client, "lightsSubscription", fmt.Sprintf(ankiVehicleSubscriptionTopic, vehicle), fmt.Sprintf(LightsTopic, vehicle), true)
+		// Only add the vehicles to the list if all the subscriptions could be sent.
+		if err1 == nil && err2 == nil && err3 == nil {
+			vehicleList = append(vehicleList, vehicle)
+		}
 	}
-
-	App(client, vehicleList)
+	return vehicleList, nil
 }
