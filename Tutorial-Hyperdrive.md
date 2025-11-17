@@ -231,12 +231,12 @@ Commands sent to the host service to control vehicle discovery.
 ```yaml
 - type: discover
   payload:
-    value: {true|false} # Default: false
+    value: { true|false } # Default: false
 
 - type: discoverSubscription
   payload:
-    topic: {topic-filter} # Default: null
-    subscribe: {true|false} # Default: false
+    topic: { topic-filter } # Default: null
+    subscribe: { true|false } # Default: false
 ```
 
 #### **OnlineStatus** and **DiscoverIntentStatus**
@@ -244,7 +244,7 @@ Commands sent to the host service to control vehicle discovery.
 Indicate whether the service is online or if the discovery intent is active.
 
 ```yaml
-value: {true|false}
+value: { true|false }
 ```
 
 #### **DiscoverStatus** and **ScanningEvent**
@@ -252,8 +252,8 @@ value: {true|false}
 Provide timestamps and status of the discovery process.
 
 ```yaml
-timestamp: {nanos}
-value: {true|false}
+timestamp: { nanos }
+value: { true|false }
 ```
 
 #### **VehicleDiscoveredEvent**
@@ -261,10 +261,10 @@ value: {true|false}
 Details about a newly discovered vehicle.
 
 ```yaml
-timestamp: {nanos}
+timestamp: { nanos }
 value:
-  model: {model-name}
-  rssi: {-127...0}
+  model: { model-name }
+  rssi: { -127...0 }
 ```
 
 #### **DiscoverSubscriptionIntentStatus**
@@ -272,10 +272,10 @@ value:
 Status of the discovery subscription intent.
 
 ```yaml
-timestamp: {nanos}
+timestamp: { nanos }
 value:
-  topic: {topic-filter}
-  subscribe: {true|false}
+  topic: { topic-filter }
+  subscribe: { true|false }
 ```
 
 #### **DiscoverSubscriptionStatus**
@@ -334,14 +334,14 @@ Commands to control vehicle actions.
 Show the connection status of the vehicle.
 
 ```yaml
-value: {true|false}
+value: { true|false }
 ```
 
 #### **ChargingStatus**, **OnTrackStatus**, and **ConnectionEvent**
 
 ```yaml
-timestamp: {nanos}
-value: {true|false}
+timestamp: { nanos }
+value: { true|false }
 ```
 
 #### **LevelStatus**
@@ -349,8 +349,8 @@ value: {true|false}
 Battery level information.
 
 ```yaml
-timestamp: {nanos}
-value: {0...100}
+timestamp: { nanos }
+value: { 0...100 }
 ```
 
 #### **VersionStatus**
@@ -358,8 +358,8 @@ value: {0...100}
 Firmware or software version of the vehicle.
 
 ```yaml
-timestamp: {nanos}
-value: {Version-String}
+timestamp: { nanos }
+value: { Version-String }
 ```
 
 #### **RssiEvent**
@@ -367,8 +367,8 @@ value: {Version-String}
 Signal strength information.
 
 ```yaml
-timestamp: {nanos}
-value: {-127...0}
+timestamp: { nanos }
+value: { -127...0 }
 ```
 
 #### **LightEffect**
@@ -376,10 +376,10 @@ value: {-127...0}
 Defines the lighting effect for vehicle lights.
 
 ```yaml
-effect: {off|steady|fade|pulse|flash|strobe}
-start: {0...15}
-end: {0...15}
-frequency: {0...255}
+effect: { off|steady|fade|pulse|flash|strobe }
+start: { 0...15 }
+end: { 0...15 }
+frequency: { 0...255 }
 ```
 
 #### **LightsIntentStatus**
@@ -387,14 +387,14 @@ frequency: {0...255}
 Current lighting settings of the vehicle.
 
 ```yaml
-timestamp: {nanos}
+timestamp: { nanos }
 value:
-  frontRed: {<LightEffect> | null}
-  frontGreen: {<LightEffect> | null}
-  tail: {<LightEffect> | null}
-  engineRed: {<LightEffect> | null}
-  engineGreen: {<LightEffect> | null}
-  engineBlue: {<LightEffect> | null}
+  frontRed: { <LightEffect> | null }
+  frontGreen: { <LightEffect> | null }
+  tail: { <LightEffect> | null }
+  engineRed: { <LightEffect> | null }
+  engineGreen: { <LightEffect> | null }
+  engineBlue: { <LightEffect> | null }
 ```
 
 #### **SpeedIntentStatus**
@@ -402,10 +402,10 @@ value:
 Current speed settings.
 
 ```yaml
-timestamp: {nanos}
+timestamp: { nanos }
 value:
-  velocity: {-100...1000}
-  acceleration: {0...2000}
+  velocity: { -100...1000 }
+  acceleration: { 0...2000 }
 ```
 
 #### **LaneIntentStatus**
@@ -413,12 +413,12 @@ value:
 Current lane change settings.
 
 ```yaml
-timestamp: {nanos}
+timestamp: { nanos }
 value:
-  velocity: {0...1000}
-  acceleration: {0...2000}
-  offsetFromCenter: {-100...100}
-  offset: {-100...100}
+  velocity: { 0...1000 }
+  acceleration: { 0...2000 }
+  offsetFromCenter: { -100...100 }
+  offset: { -100...100 }
 ```
 
 #### **CancelLaneIntentStatus**
@@ -426,8 +426,8 @@ value:
 Indicates whether a lane change has been canceled.
 
 ```yaml
-timestamp: {nanos}
-value: {true|false}
+timestamp: { nanos }
+value: { true|false }
 ```
 
 #### **StatusStatus**
@@ -435,8 +435,8 @@ value: {true|false}
 Overall status of the vehicle's connection.
 
 ```yaml
-timestamp: {nanos}
-value: {connected | disconnected | lost}
+timestamp: { nanos }
+value: { connected | disconnected | lost }
 ```
 
 #### **[Intent]SubscriptionIntentStatus**
@@ -444,10 +444,10 @@ value: {connected | disconnected | lost}
 Status of subscription intents.
 
 ```yaml
-timestamp: {nanos}
+timestamp: { nanos }
 value:
-  topic: {topic-filter}
-  subscribe: {true|false}
+  topic: { topic-filter }
+  subscribe: { true|false }
 ```
 
 #### **[Intent]SubscriptionStatus**
@@ -466,10 +466,16 @@ value: {topic-filter}...
 Let's see how we can integrate a `RemoteControl` service with our system using dynamic subscriptions. This works, if the creator of the `RemoteControl` accepts the messages required by `Hyperdrive`. This way:
 
 #### **RemoteControl**
+
 ```
 RemoteControl/
   U/
     <RemoteControlID>/
+     I/
+        discoveredVehicle/
+          <id> = json
+          <id> = json
+          ...
      E/
         hosts/
           discover <HostIntent-Payload> [Send]
@@ -480,6 +486,19 @@ RemoteControl/
           speed <VehicleIntent-Speed-Payload> [Send]
           panic <VehicleIntent-Speed-Payload> & <VehicleIntent-Lights-Payload> [Send]
 
+```
+
+### Emergency
+
+```
+Emergency/
+  U/
+    E/
+      stop (-> set velocity to 0)
+      mediate/ (copy/paste content from RemoteControl via subscription to RemoteControl)
+        RemoteControl/
+          ...
+            ...
 ```
 
 ### Scenario
@@ -557,8 +576,3 @@ Key takeaways:
 - **Dynamic Subscriptions**: Enable services to adapt to new topics and integrate with other systems seamlessly.
 
 ---
-
-
-
-
-
