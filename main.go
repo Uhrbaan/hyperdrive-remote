@@ -159,104 +159,37 @@ func listenKeyboardForStop(e *Emergency) {
 // Voir à partir d'ici pour le relais des messages RemoteControl
 // ------------------------------------------------------------------------------------------
 
-// mapRemoteTopicToIntentType mappe le segment de sujet remotecontrol au type d'intent local
-func mapRemoteTopicToIntentType(remoteAction string) string {
-	switch remoteAction {
-	case "connect":
-		return "connect"
-	case "lights":
-		return "lights"
-	case "laneChange", "lane":
-		return "lane"
-	case "speed":
-		return "speed"
-	case "panic":
-		// panic va être géré spécialement par l'appelant i.e. peut contenir speed+lights
-		return "panic"
-	default:
-		return remoteAction
-	}
+// mapRemoteTopicToMediate crée le topic mediate pour un topic RemoteControl donné
+func mapRemoteTopicToMediate(remoteTopic string) string {
+	return "Emergency/U/E/mediate/" + remoteTopic
 }
 
 // handleRemoteVehicleMessage sert de gestionnaire pour les messages RemoteControl véhicules
-// Il relaie les messages sauf si stopActive. Il essaie de mapper les chemins de sujet aux intents Hyperdrive.
+// Il relaie les messages sauf si stopActive. Il mappe simplement les topics RemoteControl vers Emergency/U/E/mediate/...
 func (e *Emergency) handleRemoteVehicleMessage(client mqtt.Client, msg mqtt.Message) {
 	if e.isStop() {
-		// En mode STOP, ignorer tous les messages de contrôle à distance (on a déjà forcé speed=0 ailleurs)
 		log.Printf("Emergency: STOP active, ignoring remote message on %s", msg.Topic())
 		return
 	}
 
-	// -----------------------------------------------------------------------------------------------------------------------
-	// Ici il faudra peut-être modifier le mappage des sujets en fonction de la structure exacte des messages RemoteControl.
-	// -----------------------------------------------------------------------------------------------------------------------
+	mediateTopic := mapRemoteTopicToMediate(msg.Topic())
+	token := client.Publish(mediateTopic, 1, false, msg.Payload())
+	token.Wait()
 
-	// Example remote topic:
-	// RemoteControl/<rcID>/E/vehicles/<action>/... (maybe /<vehicleID> or others)
-	parts := strings.Split(msg.Topic(), "/")
-
-	// parts[0] = RemoteControl, parts[1]=<rcID>, parts[2]=E, parts[3]=vehicles, parts[4]=<action> ...
-	if len(parts) < 5 {
-		log.Printf("Emergency: unexpected remote vehicle topic structure: %s", msg.Topic())
-		return
-	}
-
-	action := parts[4]
-	intentType := mapRemoteTopicToIntentType(action)
-
-	var payload interface{}
-	if len(msg.Payload()) > 0 {
-		if err := json.Unmarshal(msg.Payload(), &payload); err != nil {
-			payload = string(msg.Payload())
-		}
-	}
-
-	if intentType == "panic" {
-		if m, ok := payload.(map[string]interface{}); ok {
-			if sp, has := m["speed"]; has {
-				intent := Intent{Type: "speed", Payload: sp}
-				e.publishIntentToVehicles(intent)
-			}
-			if lg, has := m["lights"]; has {
-				intent := Intent{Type: "lights", Payload: lg}
-				e.publishIntentToVehicles(intent)
-			}
-			return
-		}
-		intent := Intent{Type: "speed", Payload: payload}
-		e.publishIntentToVehicles(intent)
-		return
-	}
-
-	// If the topic includes a vehicleID after the action, e.g. RemoteControl/<rcID>/E/vehicles/<action>/<vehicleID>/...
-	vehicleID := ""
-	if len(parts) >= 6 {
-		vehicleID = parts[5]
-	}
-
-	intent := Intent{Type: intentType, Payload: payload}
-	if vehicleID != "" {
-		e.publishIntentToVehicleTarget(vehicleID, intent)
-	} else {
-		e.publishIntentToVehicles(intent)
-	}
-	log.Printf("Emergency: relayed %s (action=%s vehicle=%s) -> intent %s", msg.Topic(), action, vehicleID, intentType)
+	log.Printf("Emergency: forwarded %s -> %s", msg.Topic(), mediateTopic)
 }
 
-// handleRemoteHostDiscover relays RemoteControl hosts/discover events to Anki/Hosts
+// handleRemoteHostDiscover relaye RemoteControl hosts/discover events to Emergency/U/E/mediate/...
 func (e *Emergency) handleRemoteHostDiscover(client mqtt.Client, msg mqtt.Message) {
 	if e.isStop() {
 		log.Printf("Emergency: STOP active, ignoring host discovery %s", msg.Topic())
 		return
 	}
-	// forward payload as-is as an intent discover/discoverSubscription etc
-	var payload interface{}
-	if err := json.Unmarshal(msg.Payload(), &payload); err != nil {
-		payload = string(msg.Payload())
-	}
-	intent := Intent{Type: "discover", Payload: payload}
-	e.publishIntentToHosts(intent)
-	log.Printf("Emergency: relayed host discover from %s", msg.Topic())
+
+	mediateTopic := mapRemoteTopicToMediate(msg.Topic())
+	client.Publish(mediateTopic, 1, false, msg.Payload())
+
+	log.Printf("Emergency: forwarded host msg %s -> %s", msg.Topic(), mediateTopic)
 }
 
 // Fonction principale qui permet de configurer le client MQTT, de s'abonner aux topics nécessaires et de gérer la boucle principale.
