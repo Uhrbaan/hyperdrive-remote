@@ -39,7 +39,7 @@ type SubscriptionPayload struct {
 
 func InitializeRemote(client mqtt.Client, vehicleDiscoverTopic string, vehicleSubscriptionTopicFormat string) ([]string, error) {
 	// start By discovering available vehicles
-	vehicleMap, err := discover(client, vehicleDiscoverTopic)
+	vehicleMap, err := Discover(client, vehicleDiscoverTopic)
 	if err != nil {
 		return nil, err
 	}

@@ -36,7 +36,7 @@ type rawVehicleData struct {
 	Value     rawVehicleDataValue `json:"value"`
 }
 
-func discover(client mqtt.Client, vehicleDiscoverTopic string) (map[string]Vehicle, error) {
+func Discover(client mqtt.Client, vehicleDiscoverTopic string) (map[string]Vehicle, error) {
 	// Now, send a discovery signal
 	vehicleList, err := discoverVehicles(client, vehicleDiscoverTopic, true)
 	if err != nil {
