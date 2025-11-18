@@ -33,12 +33,12 @@ type stopMessagePayload struct {
 
 // Emergency gère l'état d'arrêt d'urgence et relaie les messages MQTT.
 type Emergency struct {
-	client      mqtt.Client  // MQTT client
-	id          string       // Client ID
-	qos         byte         // QoS level
-	stopActive  bool         // Indique si le mode d'arrêt d'urgence est actif
-	stopMu      sync.RWMutex // Mutex pour protéger l'accès à stopActive
-	subTopicIDs []string     // Liste des topics abonnés (non utilisé dans cette version)
+	client     mqtt.Client  // MQTT client
+	id         string       // Client ID
+	qos        byte         // QoS level
+	stopActive bool         // Indique si le mode d'arrêt d'urgence est actif
+	stopMu     sync.RWMutex // Mutex pour protéger l'accès à stopActive
+	// subTopicIDs []string     // Liste des topics abonnés (non utilisé dans cette version)
 }
 
 // NewEmergency crée une nouvelle instance d'Emergency.
@@ -76,45 +76,45 @@ func (e *Emergency) publishIntentToVehicles(intent Intent) {
 }
 
 // publishIntentToVehicleTarget publie un Intent à un véhicule spécifique dans son topic I dédié.
-func (e *Emergency) publishIntentToVehicleTarget(vehicleID string, intent Intent) {
-	topic := fmt.Sprintf("Anki/Vehicles/U/%s/I/%s", vehicleID, e.id) // Construction du topic spécifique au véhicule
-	bs, _ := json.Marshal(intent)                                    // Sérialisation de l'intent en JSON
-	token := e.client.Publish(topic, e.qos, false, bs)               // Publication du message
-	token.WaitTimeout(3 * time.Second)                               // Attente de la confirmation de publication
-	if token.Error() != nil {                                        // Gestion des erreurs
-		log.Printf("publishIntentToVehicleTarget error: %v", token.Error())
-	}
-}
+// func (e *Emergency) publishIntentToVehicleTarget(vehicleID string, intent Intent) {
+// 	topic := fmt.Sprintf("Anki/Vehicles/U/%s/I/%s", vehicleID, e.id) // Construction du topic spécifique au véhicule
+// 	bs, _ := json.Marshal(intent)                                    // Sérialisation de l'intent en JSON
+// 	token := e.client.Publish(topic, e.qos, false, bs)               // Publication du message
+// 	token.WaitTimeout(3 * time.Second)                               // Attente de la confirmation de publication
+// 	if token.Error() != nil {                                        // Gestion des erreurs
+// 		log.Printf("publishIntentToVehicleTarget error: %v", token.Error())
+// 	}
+// }
 
 // publishIntentToHosts relaie un Intent aux hôtes (Anki/Hosts/U/I/<callerID>)
-func (e *Emergency) publishIntentToHosts(intent Intent) {
-	topic := fmt.Sprintf("Anki/Hosts/U/I/%s", e.id)    // Construction du topic pour les hôtes
-	bs, _ := json.Marshal(intent)                      // Sérialisation de l'intent en JSON
-	token := e.client.Publish(topic, e.qos, false, bs) // Publication du message
-	token.WaitTimeout(3 * time.Second)                 // Attente de la confirmation de publication
-	if token.Error() != nil {                          // Gestion des erreurs
-		log.Printf("publishIntentToHosts error: %v", token.Error())
-	}
-}
+// func (e *Emergency) publishIntentToHosts(intent Intent) {
+// 	topic := fmt.Sprintf("Anki/Hosts/U/I/%s", e.id)    // Construction du topic pour les hôtes
+// 	bs, _ := json.Marshal(intent)                      // Sérialisation de l'intent en JSON
+// 	token := e.client.Publish(topic, e.qos, false, bs) // Publication du message
+// 	token.WaitTimeout(3 * time.Second)                 // Attente de la confirmation de publication
+// 	if token.Error() != nil {                          // Gestion des erreurs
+// 		log.Printf("publishIntentToHosts error: %v", token.Error())
+// 	}
+// }
 
 // handleStopMessage : gestionnaire de messages pour Emergency/U/E/stop
 func (e *Emergency) handleStopMessage(client mqtt.Client, msg mqtt.Message) {
 	var p stopMessagePayload                 // structure pour stocker la valeur du message d'arrêt
 	err := json.Unmarshal(msg.Payload(), &p) // Tentative de désérialisation du message JSON
-	if err != nil {                          // Si la désérialisation échoue
-		// Tolère un simple payload "true"/"false" ou {"value": true}
-		s := strings.TrimSpace(strings.ToLower(string(msg.Payload())))
-		if s == "true" || s == `{"value":true}` {
-			p.Value = true // Valeur d'arrêt activée
-			err = nil      // Réinitialisation de l'erreur
-		} else if s == "false" || s == `{"value":false}` {
-			p.Value = false // Valeur d'arrêt désactivée
-			err = nil       // Réinitialisation de l'erreur
-		} else {
-			log.Printf("Emergency: couldn't parse stop payload: %s (err: %v)", string(msg.Payload()), err)
-			return
-		}
-	}
+	// if err != nil {                          // Si la désérialisation échoue
+	// 	// Tolère un simple payload "true"/"false" ou {"value": true}
+	// 	s := strings.TrimSpace(strings.ToLower(string(msg.Payload())))
+	// 	if s == "true" || s == `{"value":true}` {
+	// 		p.Value = true // Valeur d'arrêt activée
+	// 		err = nil      // Réinitialisation de l'erreur
+	// 	} else if s == "false" || s == `{"value":false}` {
+	// 		p.Value = false // Valeur d'arrêt désactivée
+	// 		err = nil       // Réinitialisation de l'erreur
+	// 	} else {
+	// 		log.Printf("Emergency: couldn't parse stop payload: %s (err: %v)", string(msg.Payload()), err)
+	// 		return
+	// 	}
+	// }
 	prev := e.isStop()                                               // Récupération de l'état précédent d'arrêt d'urgence
 	e.setStop(p.Value)                                               // Mise à jour de l'état d'arrêt d'urgence
 	log.Printf("Emergency: STOP set to %v (prev=%v)", p.Value, prev) // Journalisation du changement d'état
@@ -179,19 +179,6 @@ func (e *Emergency) handleRemoteVehicleMessage(client mqtt.Client, msg mqtt.Mess
 	log.Printf("Emergency: forwarded %s -> %s", msg.Topic(), mediateTopic)
 }
 
-// handleRemoteHostDiscover relaye RemoteControl hosts/discover events to Emergency/U/E/mediate/...
-func (e *Emergency) handleRemoteHostDiscover(client mqtt.Client, msg mqtt.Message) {
-	if e.isStop() {
-		log.Printf("Emergency: STOP active, ignoring host discovery %s", msg.Topic())
-		return
-	}
-
-	mediateTopic := mapRemoteTopicToMediate(msg.Topic())
-	client.Publish(mediateTopic, 1, false, msg.Payload())
-
-	log.Printf("Emergency: forwarded host msg %s -> %s", msg.Topic(), mediateTopic)
-}
-
 // Fonction principale qui permet de configurer le client MQTT, de s'abonner aux topics nécessaires et de gérer la boucle principale.
 func main() {
 	flag.Parse()
@@ -236,12 +223,12 @@ func main() {
 	log.Printf("Subscribed to %s", remoteVehiclesTopic)
 
 	// Optionnellement s'abonner RemoteControl hosts/discover
-	remoteHostsDiscover := "RemoteControl/+/E/hosts/discover"
-	if tok := client.Subscribe(remoteHostsDiscover, qos, em.handleRemoteHostDiscover); tok.Wait() && tok.Error() != nil {
-		log.Printf("Warning: subscribe hosts/discover failed: %v", tok.Error())
-	} else {
-		log.Printf("Subscribed to %s", remoteHostsDiscover)
-	}
+	// remoteHostsDiscover := "RemoteControl/+/E/hosts/discover"
+	// if tok := client.Subscribe(remoteHostsDiscover, qos, em.handleRemoteHostDiscover); tok.Wait() && tok.Error() != nil {
+	// 	log.Printf("Warning: subscribe hosts/discover failed: %v", tok.Error())
+	// } else {
+	// 	log.Printf("Subscribed to %s", remoteHostsDiscover)
+	// }
 
 	go listenKeyboardForStop(em) // Lancer l'écoute du clavier dans une goroutine séparée
 

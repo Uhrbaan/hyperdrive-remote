@@ -387,3 +387,18 @@ func main() {
 // 	e.publishIntentToHosts(intent)
 // 	log.Printf("Emergency: relayed host discover from %s", msg.Topic())
 // }
+
+
+
+// handleRemoteHostDiscover relaye RemoteControl hosts/discover events to Emergency/U/E/mediate/...
+// func (e *Emergency) handleRemoteHostDiscover(client mqtt.Client, msg mqtt.Message) {
+// 	if e.isStop() {
+// 		log.Printf("Emergency: STOP active, ignoring host discovery %s", msg.Topic())
+// 		return
+// 	}
+
+// 	mediateTopic := mapRemoteTopicToMediate(msg.Topic())
+// 	client.Publish(mediateTopic, 1, false, msg.Payload())
+
+// 	log.Printf("Emergency: forwarded host msg %s -> %s", msg.Topic(), mediateTopic)
+// }
