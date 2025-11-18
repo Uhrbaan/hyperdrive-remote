@@ -7,6 +7,7 @@ package main
 // Remote-Control for: Lights
 
 import (
+	"hyperdrive/remote/hyperdrive"
 	"log"
 	"strconv"
 
