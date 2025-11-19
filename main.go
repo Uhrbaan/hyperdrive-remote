@@ -7,7 +7,6 @@ package main
 // Remote-Control for: Lights
 
 import (
-	"hyperdrive/remote/hyperdrive"
 	"log"
 	"strconv"
 
@@ -34,6 +33,4 @@ func main() {
 	}
 	log.Println("Connected to mosquitto broker on", rpiIp+":"+strconv.Itoa(mqttPort))
 
-	// Launch the graphical app, blocking
-	hyperdrive.App(client)
 }
