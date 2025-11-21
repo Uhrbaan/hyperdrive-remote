@@ -3,8 +3,10 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"hyperdrive/remote/hyperdrive"
 	"log"
+	"slices"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -23,9 +25,11 @@ const (
 
 // Configuration des variables pour le broker MQTT, l'ID client et le QoS.
 var (
-	brokerHost   = flag.String("broker", "10.42.0.1:1883", "MQTT broker URL")
-	clientIDFlag = flag.String("id", "hjkàélkgjhjvbkljgfjxdgchjkl", "Client ID for Emergency (default: random UUID)")
-	qosFlag      = flag.Int("qos", 1, "MQTT QoS")
+	brokerHost                = flag.String("broker", "10.42.0.1:1883", "MQTT broker URL")
+	clientIDFlag              = flag.String("id", "kevin-leo-emergency-control", "Client ID for Emergency (default: random UUID)")
+	qosFlag                   = flag.Int("qos", 1, "MQTT QoS")
+	vehicleSubscriptionFormat string
+	remoteInstructionsFormat  string
 )
 
 // Definition de la structure Intent pour les messages publiés aux véhicules et hôtes.
@@ -41,11 +45,11 @@ type stopMessagePayload struct {
 
 // Emergency gère l'état d'arrêt d'urgence et relaie les messages MQTT.
 type Emergency struct {
-	client      mqtt.Client // MQTT client
-	id          string      // Client ID
-	qos         byte        // QoS level
-	stop        bool        // Indique si le mode d'arrêt d'urgence est actif
-	subTopicIDs []string    // Liste des topics abonnés (non utilisé dans cette version)
+	client      mqtt.Client         // MQTT client
+	id          string              // Client ID
+	qos         byte                // QoS level
+	stop        bool                // Indique si le mode d'arrêt d'urgence est actif
+	vehicleList map[string][]string // Liste des topics abonnés (non utilisé dans cette version)
 }
 
 // NewEmergency crée une nouvelle instance d'Emergency.
@@ -58,8 +62,6 @@ func NewEmergency(client mqtt.Client, id string, qos byte) *Emergency {
 	}
 }
 
-// publishIntentToVehicles permet de diffuser un Intent à tous les véhicules (Anki/Vehicles/U/I/<callerID>)
-
 // handleStopMessage : gestionnaire de messages pour Emergency/U/E/stop
 func (e *Emergency) publishStopMessage(client mqtt.Client) {
 	// Si le mode d'arrêt est activé, publier immédiatement un intent speed=0 à tous les véhicules
@@ -67,12 +69,9 @@ func (e *Emergency) publishStopMessage(client mqtt.Client) {
 		return
 	}
 
-	intent := Intent{
-		Type: "speed",
-		Payload: map[string]interface{}{
-			"velocity":     0,
-			"acceleration": 0,
-		},
+	intent := hyperdrive.SpeedPayload{
+		Velocity:     0,
+		Acceleration: 1000,
 	}
 	log.Println("Emergency: publishing immediate speed=0 to all vehicles")
 
@@ -81,38 +80,15 @@ func (e *Emergency) publishStopMessage(client mqtt.Client) {
 		return
 	}
 
-	client.Publish(stopTopic, 1, false, data)
+	if token := client.Publish(stopTopic, 1, false, data); token.Wait() && token.Error() != nil {
+		log.Println("[Emergency] Got error while sending stop:", token.Error())
+	}
 }
-
-// ------------------------------------------------------------------------------------------
-// Voir à partir d'ici pour le relais des messages RemoteControl
-// ------------------------------------------------------------------------------------------
 
 // mapRemoteTopicToMediate crée le topic mediate pour un topic RemoteControl donné
 func mapRemoteTopicToMediate(remoteTopic string) string {
 	return "Emergency/U/E/mediate-De-Kevin-et-Leonard/" + remoteTopic
 }
-
-// handleRemoteVehicleMessage sert de gestionnaire pour les messages RemoteControl véhicules
-// Il relaie les messages sauf si stopActive. Il mappe simplement les topics RemoteControl vers Emergency/U/E/mediate/...
-// func (e *Emergency) handleRemoteVehicleMessage(client mqtt.Client, msg mqtt.Message) {
-// 	log.Println("Got message from", msg.Topic(), "mirroring to", mapRemoteTopicToMediate(msg.Topic()))
-// 	if e.stop == true {
-// 		log.Printf("Emergency: STOP active, ignoring remote message on %s", msg.Topic())
-// 		return
-// 	} else {
-// 		log.Println("Should be disabled.")
-// 	}
-
-// 	mediateTopic := mapRemoteTopicToMediate(msg.Topic())
-// 	token := client.Publish(mediateTopic, 1, false, msg.Payload())
-// 	token.Wait()
-// 	if token.Error() != nil {
-// 		log.Fatal("Something terrible happened while mirroring remote: failed to publish:", token.Error())
-// 	}
-
-// 	log.Printf("Emergency: forwarded %s -> %s", msg.Topic(), mediateTopic)
-// }
 
 // Fonction principale qui permet de configurer le client MQTT, de s'abonner aux topics nécessaires et de gérer la boucle principale.
 func main() {
@@ -154,7 +130,52 @@ func main() {
 			return
 		}
 
+		var vehicleID string
+		var payloadType string
+		n, err := fmt.Sscanf(msg.Topic(), remoteInstructionsFormat, &vehicleID, &payloadType)
+		log.Println("Got vehicle", vehicleID, "for the payload type", payloadType)
+		if n == 2 && err != nil {
+			log.Fatalf("The format provided: %s is not correct: %v", remoteInstructionsFormat, err)
+		}
+
 		mediateTopic := mapRemoteTopicToMediate(msg.Topic())
+
+		// Initialize the map if not already.
+		if em.vehicleList == nil {
+			em.vehicleList = map[string][]string{}
+		}
+
+		subscriptionType, exists := em.vehicleList[vehicleID]
+
+		// If the car does not exist, or if the passed type is not in the list
+		if !exists || !slices.Contains(subscriptionType, payloadType) {
+			// If the car does not exist, add it to the list with the payload type.
+			if !exists {
+				em.vehicleList[vehicleID] = []string{payloadType}
+
+				// Give it the stop topic directly upon creation
+				err = hyperdrive.SyncSubscription(client, "speedSubscription", fmt.Sprintf(vehicleSubscriptionFormat, vehicleID), stopTopic, true)
+				if err != nil {
+					log.Println("Failed to subscribe the vehicle to the emergency stop:", err)
+				}
+				log.Println("Successfully sent Stop subscription", stopTopic, "to", fmt.Sprintf(vehicleSubscriptionFormat, vehicleID))
+				time.Sleep(1000 * time.Millisecond) // enusure subscription gets registerd before sending the next
+			}
+
+			// if the car exists, but the payload type is still unknown, then add the payload type.
+			if !slices.Contains(subscriptionType, payloadType) {
+				em.vehicleList[vehicleID] = append(em.vehicleList[vehicleID], payloadType)
+			}
+
+			// Subscribe to the suscription type that was sent
+			err := hyperdrive.SyncSubscription(client, payloadType+"Subscription", fmt.Sprintf(vehicleSubscriptionFormat, vehicleID), mediateTopic, true)
+			if err != nil {
+				log.Println("Failed to subscribe the vehicle the emergency remote:", err)
+			}
+			log.Println("Successfully sent subscription of", mediateTopic, "to", fmt.Sprintf(vehicleSubscriptionFormat, vehicleID))
+			time.Sleep(1000 * time.Millisecond) // enusure subscription gets registerd before sending the next
+		}
+
 		if token := client.Publish(mediateTopic, 1, false, msg.Payload()); token.Error() != nil {
 			log.Fatal("Something terrible happened while mirroring remote: failed to publish:", token.Error())
 		}
@@ -174,31 +195,25 @@ func main() {
 	w.Resize(fyne.NewSize(350, 180))
 	isStopped.Set(false)
 
-	hostIntentTopicEntry := widget.NewEntry()
-	hostIntentTopicEntry.SetText("Anki/Hosts/U/I")
 	vehicleIntentTopicFormatEntry := widget.NewEntry()
 	vehicleIntentTopicFormatEntry.SetText("Anki/Vehicles/U/%s/I")
-	hostDiscoverVehicleTopicEntry := widget.NewEntry()
-	hostDiscoverVehicleTopicEntry.SetText("Anki/Hosts/U/hyperdrive/E/vehicle/discovered/#")
+	remoteVehicleInstructionsTopicEntry := widget.NewEntry()
+	remoteVehicleInstructionsTopicEntry.SetText("RemoteControl/U/E/vehicles/%8s/%s")
 
 	form := &widget.Form{
 		Items: []*widget.FormItem{
-			{
-				Text:   "Topic for the Anki Host intent:",
-				Widget: hostIntentTopicEntry,
-			},
 			{
 				Text:   "Topic format (where %s is the car id) of the car intents:",
 				Widget: vehicleIntentTopicFormatEntry,
 			},
 			{
-				Text:   "Topic where to discover vehicles",
-				Widget: hostDiscoverVehicleTopicEntry,
+				Text:   "First %s for the vehicle, second for the subscription type",
+				Widget: remoteVehicleInstructionsTopicEntry,
 			},
 		},
 		OnSubmit: func() {
-			vehicleMap, _ := hyperdrive.Discover(client, hostDiscoverVehicleTopicEntry.Text)
-			log.Println(vehicleMap)
+			vehicleSubscriptionFormat = vehicleIntentTopicFormatEntry.Text
+			remoteInstructionsFormat = remoteVehicleInstructionsTopicEntry.Text
 
 			statusLabel := widget.NewLabelWithData(binding.BoolToString(isStopped))
 

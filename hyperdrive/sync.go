@@ -29,11 +29,6 @@ func SyncSubscription(client mqtt.Client, subscriptionType string, subscriptionT
 			Subscribe: subscribe,
 		},
 	})
-	/*
-		{
-
-		}
-	*/
 
 	if err != nil {
 		return err
