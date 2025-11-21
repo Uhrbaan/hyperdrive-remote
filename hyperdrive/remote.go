@@ -8,7 +8,6 @@ The Anki service cans subscribe to any of its branches and will mirror it.
 */
 
 import (
-	"fmt"
 	"log"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -47,14 +46,7 @@ func InitializeRemote(client mqtt.Client, vehicleDiscoverTopic string, vehicleSu
 
 	var vehicleList []string
 	for vehicle := range vehicleMap {
-		err1 := SyncSubscription(client, "connectSubscription", fmt.Sprintf(vehicleSubscriptionTopicFormat, vehicle), fmt.Sprintf(ConnectTopic, vehicle), true)
-		err2 := SyncSubscription(client, "speedSubscription", fmt.Sprintf(vehicleSubscriptionTopicFormat, vehicle), fmt.Sprintf(SpeedTopic, vehicle), true)
-		err3 := SyncSubscription(client, "lightsSubscription", fmt.Sprintf(vehicleSubscriptionTopicFormat, vehicle), fmt.Sprintf(LightsTopic, vehicle), true)
-
-		// Only add the vehicles to the list if all the subscriptions could be sent.
-		if err1 == nil && err2 == nil && err3 == nil {
-			vehicleList = append(vehicleList, vehicle)
-		}
+		vehicleList = append(vehicleList, vehicle)
 	}
 	return vehicleList, nil
 }
