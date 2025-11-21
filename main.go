@@ -29,14 +29,7 @@ func main() {
 	// Connect to the broker and initialize the client
 	client := mqtt.NewClient(opts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		log.Fatalf("Could not connect to broker: %v", token.Error())
-	}
-	em := NewEmergency(client, id, qos)
-
-	// Souscrire au topic d'arrêt d'urgence
-	stopTopic := "Emergency/U/E/stop"
-	if tok := client.Subscribe(stopTopic, qos, em.handleStopMessage); tok.Wait() && tok.Error() != nil {
-		log.Fatalf("Subscribe to stop topic failed: %v", tok.Error())
+		log.Fatal("Could not establish connection with MQTT server: ", token.Error())
 	}
 	log.Println("Connected to mosquitto broker on", rpiIp+":"+strconv.Itoa(mqttPort))
 
