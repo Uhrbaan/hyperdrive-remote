@@ -72,104 +72,67 @@ func carCard(client mqtt.Client, target string) fyne.CanvasObject {
 		}
 	})
 
-	// --- Lane Change V2 ---
-	laneChangeLabel := widget.NewLabel("Lane Change Offset:")
-	laneOffsetSlider := widget.NewSliderWithData(-100, 100, laneOffsetBinding)
-	laneOffsetValueLabel := widget.NewLabelWithData(binding.FloatToStringWithFormat(laneOffsetBinding, "%.0f"))
-
-	laneForm := container.New(layout.NewFormLayout(),
-		laneChangeLabel,
-		container.NewBorder(nil, nil, nil, laneOffsetValueLabel, laneOffsetSlider),
+	// Offset presets. Might have to be adapted to the specific cars or speed.
+	const (
+		CenterOffset    float32 = 0.0
+		LeftOffset      float32 = 23.0  // Offset pour une voie à gauche
+		VeryLeftOffset  float32 = 68.0  // Offset pour la voie la plus à gauche
+		RightOffset     float32 = -23.0 // Offset pour une voie à droite
+		VeryRightOffset float32 = -68.0 // Offset pour la voie la plus à droite
 	)
 
-	// L'application du changement de piste utilise la vitesse et l'accélération actuelles
-	// du véhicule (ici, on utilise les bindings de la carte).
-	laneApplyButton := widget.NewButton("Apply Lane Change", func() {
+	laneChangeLabel := widget.NewLabel("Lane Change:")
+
+	// Fonction d'aide pour publier l'action de changement de piste
+	publishLaneChange := func(offset float32) {
+		// Récupérer la vitesse et l'accélération actuelles
 		v, _ := velocityBinding.Get()
 		a, _ := accelerationBinding.Get()
 		o, _ := laneOffsetBinding.Get()
 
-		// On utilise offset (o) ici pour la simplicité de l'UI.
-		err := lane(client, float32(v), float32(a), 0.0, float32(o), target)
+		// Remarque : Utiliser la nouvelle fonction lane(client, target, offsetValue)
+		err := lane(client, float32(v), float32(a), offset, float32(o), target)
 		if err != nil {
 			log.Println("[UI] Could not send lane payload correctly:", err)
 		}
+	}
+
+	btnVeryLeft := widget.NewButton("<<", func() {
+		log.Println("[UI] Lane change Very Left for", target)
+		publishLaneChange(VeryLeftOffset)
 	})
 
-	laneCancelButton := widget.NewButton("Cancel Lane Change", func() {
+	btnLeft := widget.NewButton("<", func() {
+		log.Println("[UI] Lane change Left for", target)
+		publishLaneChange(LeftOffset)
+	})
+
+	btnRight := widget.NewButton(">", func() {
+		log.Println("[UI] Lane change Right for", target)
+		publishLaneChange(RightOffset)
+	})
+
+	btnVeryRight := widget.NewButton(">>", func() {
+		log.Println("[UI] Lane change Very Right for", target)
+		publishLaneChange(VeryRightOffset)
+	})
+
+	laneCancelButton := widget.NewButton("Cancel", func() {
 		err := cancelLane(client, target)
 		if err != nil {
-			log.Println("[UI] Could not send cancel lane payload correctly:", err)
+			log.Println("[UI] Could not send lane cancel payload correctly:", err)
 		}
 	})
-	// Utiliser un VBox pour empiler le slider et les boutons
+
+	// Conteneur pour les boutons de déplacement
+	laneMoveButtons := container.NewGridWithColumns(4, btnVeryLeft, btnLeft, btnRight, btnVeryRight)
+
+	// Assemblage final du bloc Lane Change
 	laneChangeBox := container.NewVBox(
-		laneForm,
-		container.NewGridWithColumns(2, laneApplyButton, laneCancelButton),
+		laneChangeLabel,
+		laneMoveButtons,
+		container.NewCenter(laneCancelButton),
 	)
-
-	// --- Lane Change V3 ---
-	// Offsets typiques (à ajuster selon la configuration réelle de la piste/l'hôte)
-	// const (
-	// 	CenterOffset    float32 = 0.0
-	// 	LeftOffset      float32 = -23.0 // Offset pour une voie à gauche
-	// 	VeryLeftOffset  float32 = -68.0 // Offset pour la voie la plus à gauche
-	// 	RightOffset     float32 = 23.0  // Offset pour une voie à droite
-	// 	VeryRightOffset float32 = 68.0  // Offset pour la voie la plus à droite
-	// )
-
-	// laneChangeLabel := widget.NewLabel("Lane Change:")
-
-	// // Fonction d'aide pour publier l'action de changement de piste
-	// publishLaneChange := func(offset float32) {
-	// 	// Récupérer la vitesse et l'accélération actuelles
-	// 	v, _ := velocityBinding.Get()
-	// 	a, _ := accelerationBinding.Get()
-	// 	o, _ := laneOffsetBinding.Get()
-
-	// 	// Remarque : Utiliser la nouvelle fonction lane(client, target, offsetValue)
-	// 	err := lane(client, float32(v), float32(a), offset, float32(o), target)
-	// 	if err != nil {
-	// 		log.Println("[UI] Could not send lane payload correctly:", err)
-	// 	}
-	// }
-
-	// btnVeryLeft := widget.NewButton("<<", func() {
-	// 	log.Println("[UI] Lane change Very Left for", target)
-	// 	publishLaneChange(VeryLeftOffset)
-	// })
-
-	// btnLeft := widget.NewButton("<", func() {
-	// 	log.Println("[UI] Lane change Left for", target)
-	// 	publishLaneChange(LeftOffset)
-	// })
-
-	// btnRight := widget.NewButton(">", func() {
-	// 	log.Println("[UI] Lane change Right for", target)
-	// 	publishLaneChange(RightOffset)
-	// })
-
-	// btnVeryRight := widget.NewButton(">>", func() {
-	// 	log.Println("[UI] Lane change Very Right for", target)
-	// 	publishLaneChange(VeryRightOffset)
-	// })
-
-	// laneCancelButton := widget.NewButton("Cancel", func() {
-	// 	err := cancelLane(client, target)
-	// 	if err != nil {
-	// 		log.Println("[UI] Could not send lane cancel payload correctly:", err)
-	// 	}
-	// })
-
-	// // Conteneur pour les boutons de déplacement
-	// laneMoveButtons := container.NewGridWithColumns(4, btnVeryLeft, btnLeft, btnRight, btnVeryRight)
-
-	// // Assemblage final du bloc Lane Change
-	// laneChangeBox := container.NewVBox(
-	// 	laneChangeLabel,
-	// 	laneMoveButtons,
-	// 	container.NewCenter(laneCancelButton),
-	// )
 
 	// --- Lights ---
 	lightTypeOptions := []string{"Front Green", "Front Red", "Tail", "Engine Red", "Engine Green", "Engine Blue"}
