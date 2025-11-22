@@ -24,12 +24,12 @@ type Intent struct {
 	Payload interface{} `json:"payload"`
 }
 
-type LanePayload struct {
-	Velocity         float32 `json:"velocity"`         // {0...1000} # Default: 0
-	Acceleration     float32 `json:"acceleration"`     // {0...1000} # Default: 0
-	Offset           float32 `json:"offset"`           // {-100.0...100.0} # Default: 0.0
-	OffsetFromCenter float32 `json:"offsetFromCenter"` // {-100.0...100.0} # Default: 0.0
-}
+// type LanePayload struct {
+// 	Velocity         float32 `json:"velocity"`         // {0...1000} # Default: 0
+// 	Acceleration     float32 `json:"acceleration"`     // {0...1000} # Default: 0
+// 	Offset           float32 `json:"offset"`           // {-100.0...100.0} # Default: 0.0
+// 	OffsetFromCenter float32 `json:"offsetFromCenter"` // {-100.0...100.0} # Default: 0.0
+// }
 
 type SubscriptionPayload struct {
 	Topic     string `json:"topic"`     // {topic-filter} # Default: null
