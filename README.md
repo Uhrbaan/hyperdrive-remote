@@ -8,6 +8,8 @@ To install the project, first install go, clone the repository, and then run eit
 # install go 
 sudo apt install golang-go # ubuntu
 sudo dnf install golang # fedora
+winget install GoLang.Go # windows
+brew install go # macos
 
 # clone the repository
 git clone https://github.com/Uhrbaan/hyperdrive-remote.git
