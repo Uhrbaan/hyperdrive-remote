@@ -271,6 +271,12 @@ func initialPrompt(window fyne.Window, client mqtt.Client) fyne.CanvasObject {
 
 			// replace the form by the cars
 			window.SetContent(content)
+
+			window.SetOnClosed(func() {
+				for _, car := range vehicleList {
+					connect(client, false, car) // disconnect each car when closing the app.
+				}
+			})
 		},
 	}
 

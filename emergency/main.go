@@ -191,7 +191,7 @@ func main() {
 	// Create app
 	isStopped := binding.NewBool()
 
-	w := app.New().NewWindow("title")
+	w := app.New().NewWindow("Emergency")
 	w.Resize(fyne.NewSize(350, 180))
 	isStopped.Set(false)
 
