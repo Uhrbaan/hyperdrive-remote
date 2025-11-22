@@ -286,8 +286,6 @@ func initialPrompt(window fyne.Window, client mqtt.Client) fyne.CanvasObject {
 // App is the main Fyne application entry point.
 // This replaces the original App() function.
 func App(client mqtt.Client) {
-	client.Publish("HelloWorld", 1, false, "Hello, world !")
-
 	a := app.New()
 	w := a.NewWindow("Hyperdrive RemoteControl")
 

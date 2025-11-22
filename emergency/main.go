@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	stopTopic = "Emergency/U/E/stop"
+	stopTopic        = "Emergency/U/E/stop"
+	mediateRootTopic = "Emergency/U/E/mediate/"
 )
 
 // Configuration des variables pour le broker MQTT, l'ID client et le QoS.
@@ -87,7 +88,7 @@ func (e *Emergency) publishStopMessage(client mqtt.Client) {
 
 // mapRemoteTopicToMediate crée le topic mediate pour un topic RemoteControl donné
 func mapRemoteTopicToMediate(remoteTopic string) string {
-	return "Emergency/U/E/mediate-De-Kevin-et-Leonard/" + remoteTopic
+	return mediateRootTopic + remoteTopic
 }
 
 // Fonction principale qui permet de configurer le client MQTT, de s'abonner aux topics nécessaires et de gérer la boucle principale.
