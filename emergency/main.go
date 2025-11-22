@@ -123,72 +123,6 @@ func main() {
 	}
 	em := NewEmergency(client, id, qos)
 
-	// Souscrire aux événements des véhicules RemoteControl
-	if tok := client.Subscribe("RemoteControl/#", 1, func(client mqtt.Client, msg mqtt.Message) {
-		log.Println("Got message from", msg.Topic(), "mirroring to", mapRemoteTopicToMediate(msg.Topic()))
-		if em.stop == true {
-			log.Printf("Emergency: STOP active, ignoring remote message on %s", msg.Topic())
-			return
-		}
-
-		var vehicleID string
-		var payloadType string
-		n, err := fmt.Sscanf(msg.Topic(), remoteInstructionsFormat, &vehicleID, &payloadType)
-		log.Println("Got vehicle", vehicleID, "for the payload type", payloadType)
-		if n == 2 && err != nil {
-			log.Fatalf("The format provided: %s is not correct: %v", remoteInstructionsFormat, err)
-		}
-
-		mediateTopic := mapRemoteTopicToMediate(msg.Topic())
-
-		// Initialize the map if not already.
-		if em.vehicleList == nil {
-			em.vehicleList = map[string][]string{}
-		}
-
-		subscriptionType, exists := em.vehicleList[vehicleID]
-
-		// If the car does not exist, or if the passed type is not in the list
-		if !exists || !slices.Contains(subscriptionType, payloadType) {
-			// If the car does not exist, add it to the list with the payload type.
-			if !exists {
-				em.vehicleList[vehicleID] = []string{payloadType}
-
-				// Give it the stop topic directly upon creation
-				err = hyperdrive.SyncSubscription(client, "speedSubscription", fmt.Sprintf(vehicleSubscriptionFormat, vehicleID), stopTopic, true)
-				if err != nil {
-					log.Println("Failed to subscribe the vehicle to the emergency stop:", err)
-				}
-				log.Println("Successfully sent Stop subscription", stopTopic, "to", fmt.Sprintf(vehicleSubscriptionFormat, vehicleID))
-				time.Sleep(1000 * time.Millisecond) // enusure subscription gets registerd before sending the next
-			}
-
-			// if the car exists, but the payload type is still unknown, then add the payload type.
-			if !slices.Contains(subscriptionType, payloadType) {
-				em.vehicleList[vehicleID] = append(em.vehicleList[vehicleID], payloadType)
-			}
-
-			// Subscribe to the suscription type that was sent
-			err := hyperdrive.SyncSubscription(client, payloadType+"Subscription", fmt.Sprintf(vehicleSubscriptionFormat, vehicleID), mediateTopic, true)
-			if err != nil {
-				log.Println("Failed to subscribe the vehicle the emergency remote:", err)
-			}
-			log.Println("Successfully sent subscription of", mediateTopic, "to", fmt.Sprintf(vehicleSubscriptionFormat, vehicleID))
-			time.Sleep(1000 * time.Millisecond) // enusure subscription gets registerd before sending the next
-		}
-
-		if token := client.Publish(mediateTopic, 1, false, msg.Payload()); token.Error() != nil {
-			log.Fatal("Something terrible happened while mirroring remote: failed to publish:", token.Error())
-		}
-
-		log.Printf("Emergency: forwarded %s -> %s", msg.Topic(), mediateTopic)
-
-	}); tok.Wait() && tok.Error() != nil {
-		log.Fatalf("Subscribe to remote vehicles failed: %v", tok.Error())
-	}
-
-	// APPLICATION
-
 	// Create app
 	isStopped := binding.NewBool()
 
@@ -200,6 +134,8 @@ func main() {
 	vehicleIntentTopicFormatEntry.SetText("Anki/Vehicles/U/%s/I")
 	remoteVehicleInstructionsTopicEntry := widget.NewEntry()
 	remoteVehicleInstructionsTopicEntry.SetText("RemoteControl/U/E/vehicles/%8s/%s")
+	remoteRootTopicEntry := widget.NewEntry()
+	remoteRootTopicEntry.SetText("RemoteControl/#")
 
 	form := &widget.Form{
 		Items: []*widget.FormItem{
@@ -211,10 +147,78 @@ func main() {
 				Text:   "First %s for the vehicle, second for the subscription type",
 				Widget: remoteVehicleInstructionsTopicEntry,
 			},
+			{
+				Text:   "RemoteControl root topic",
+				Widget: remoteRootTopicEntry,
+			},
 		},
 		OnSubmit: func() {
 			vehicleSubscriptionFormat = vehicleIntentTopicFormatEntry.Text
 			remoteInstructionsFormat = remoteVehicleInstructionsTopicEntry.Text
+
+			// Souscrire aux événements des véhicules RemoteControl
+			if tok := client.Subscribe(remoteRootTopicEntry.Text, 1, func(client mqtt.Client, msg mqtt.Message) {
+				log.Println("Got message from", msg.Topic(), "mirroring to", mapRemoteTopicToMediate(msg.Topic()))
+				if em.stop == true {
+					log.Printf("Emergency: STOP active, ignoring remote message on %s", msg.Topic())
+					return
+				}
+
+				var vehicleID string
+				var payloadType string
+				n, err := fmt.Sscanf(msg.Topic(), remoteInstructionsFormat, &vehicleID, &payloadType)
+				log.Println("Got vehicle", vehicleID, "for the payload type", payloadType)
+				if n == 2 && err != nil {
+					log.Fatalf("The format provided: %s is not correct: %v", remoteInstructionsFormat, err)
+				}
+
+				mediateTopic := mapRemoteTopicToMediate(msg.Topic())
+
+				// Initialize the map if not already.
+				if em.vehicleList == nil {
+					em.vehicleList = map[string][]string{}
+				}
+
+				subscriptionType, exists := em.vehicleList[vehicleID]
+
+				// If the car does not exist, or if the passed type is not in the list
+				if !exists || !slices.Contains(subscriptionType, payloadType) {
+					// If the car does not exist, add it to the list with the payload type.
+					if !exists {
+						em.vehicleList[vehicleID] = []string{payloadType}
+
+						// Give it the stop topic directly upon creation
+						err = hyperdrive.SyncSubscription(client, "speedSubscription", fmt.Sprintf(vehicleSubscriptionFormat, vehicleID), stopTopic, true)
+						if err != nil {
+							log.Println("Failed to subscribe the vehicle to the emergency stop:", err)
+						}
+						log.Println("Successfully sent Stop subscription", stopTopic, "to", fmt.Sprintf(vehicleSubscriptionFormat, vehicleID))
+						time.Sleep(1000 * time.Millisecond) // enusure subscription gets registerd before sending the next
+					}
+
+					// if the car exists, but the payload type is still unknown, then add the payload type.
+					if !slices.Contains(subscriptionType, payloadType) {
+						em.vehicleList[vehicleID] = append(em.vehicleList[vehicleID], payloadType)
+					}
+
+					// Subscribe to the suscription type that was sent
+					err := hyperdrive.SyncSubscription(client, payloadType+"Subscription", fmt.Sprintf(vehicleSubscriptionFormat, vehicleID), mediateTopic, true)
+					if err != nil {
+						log.Println("Failed to subscribe the vehicle the emergency remote:", err)
+					}
+					log.Println("Successfully sent subscription of", mediateTopic, "to", fmt.Sprintf(vehicleSubscriptionFormat, vehicleID))
+					time.Sleep(1000 * time.Millisecond) // enusure subscription gets registerd before sending the next
+				}
+
+				if token := client.Publish(mediateTopic, 1, false, msg.Payload()); token.Error() != nil {
+					log.Fatal("Something terrible happened while mirroring remote: failed to publish:", token.Error())
+				}
+
+				log.Printf("Emergency: forwarded %s -> %s", msg.Topic(), mediateTopic)
+
+			}); tok.Wait() && tok.Error() != nil {
+				log.Fatalf("Subscribe to remote vehicles failed: %v", tok.Error())
+			}
 
 			statusLabel := widget.NewLabelWithData(binding.BoolToString(isStopped))
 
@@ -244,7 +248,6 @@ func main() {
 
 			// replace the form by the cars
 			w.SetContent(content)
-
 		},
 	}
 
