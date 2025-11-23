@@ -17,6 +17,7 @@ import (
 
 const (
 	rpiIp = "10.42.0.1"
+	// rpiIp = "10.33.197.220"
 	// rpiIp    = "test.mosquitto.org"
 	mqttPort = 1883
 )
@@ -35,5 +36,4 @@ func main() {
 	log.Println("Connected to mosquitto broker on", rpiIp+":"+strconv.Itoa(mqttPort))
 
 	hyperdrive.App(client)
-
 }
