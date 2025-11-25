@@ -10,8 +10,7 @@ import (
 )
 
 const (
-	DiscoverTopic            = "RemoteControl/U/E/hosts/discover"
-	ListenDiscoverTopicTopic = "RemoteControl/Hosts/I"
+	DiscoverTopic = "RemoteControl/U/E/hosts/discover"
 )
 
 type DiscoverPayload struct {

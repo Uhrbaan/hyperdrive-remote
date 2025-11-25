@@ -21,5 +21,6 @@ go run emergency/main.go # Emergency app
 ```
 
 The first time you run an app, it will install all dependencies which might take some time.
+If you encounter problems during the installation of `fyne` (a dependency used to create the graphical applications), please refer to <https://docs.fyne.io/started/quick/>.
 
 > Please note that for the apps to work, both must be running at the same time, and you *must* me connected to the hyperdrive wifi. Also make sure that the topics provided at the app startup are correct, although they should be if you haven't changed the default setup.
