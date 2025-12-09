@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 
+	"github.com/dominikbraun/graph"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
 )
@@ -26,8 +28,10 @@ func main() {
 	}
 	log.Println("Connected to mosquitto broker on", rpiIp+":"+strconv.Itoa(mqttPort))
 
-	g := buildTrackGraph()
+	g := trackGraph()
+	path, _ := graph.ShortestPath(g, "16", "20")
+	fmt.Printf("%v is the shortest path from 16 to 20.\n", path)
 	go VehicleTracking(client, "8EF0310F", g)
 
-	UI(client)
+	// UI(client)
 }

@@ -1,4 +1,123 @@
+lanes: 
+  - straight:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+      - 16
+  
+  - curve: 
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+
+  - t-section-bottom:
+      - 9
+      - 10 
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15 
+      - 16
+  
+  - t-section-left:
+      - 1
+      - 2
+      - 3 
+      - 4
+
+  - t-section-right: 
+      - 5
+      - 6
+      - 7
+      - 8
+
+  - intersection-horizontal:
+      - 0
+
 vertices:
-  - id: 13
-    tracks:
-      - 
+- id: '13'
+  track: 13
+  shape: curve
+- id: '20'
+  shape: straight
+  track: 20
+- id: '04-bottom'
+  shape: t-section-bottom
+  track: 4
+- id: '04-left'
+  shape: t-section-left
+  track: 4
+- id: '04-right'
+  shape: t-section-right 
+  track: 4
+- id: '16'
+  shape: curve 
+  track: 16 
+- id: '01-bottom'
+  shape: t-section-bottom 
+  track: 1
+- id: '01-left'
+  shape: t-section-left 
+  track: 1
+- id: '01-right'
+  shape: t-section-right 
+  track: 1
+- id: '07'
+  shape: straight
+  track: 7
+- id: '05-bottom'
+  shape: t-section-bottom 
+  track: 5
+- id: '05-left'
+  shape: t-section-left 
+  track: 5
+- id: '05-right'
+  shape: t-section-right 
+  track: 5
+- id: '08'
+  shape: straight
+  track: 8
+- id: '02-bottom'
+  shape: t-section-bottom 
+  track: 2
+- id: '02-left'
+  shape: t-section-left 
+  track: 2
+- id: '02-right'
+  shape: t-section-right 
+  track: 2
+- id: '09-bottom'
+  shape: t-section-bottom 
+  track: 9
+- id: '09-left'
+  shape: t-section-left 
+  track: 9
+- id: '09-right'
+  shape: t-section-right 
+  track: 9
+- id: '11'
+  shape: straight
+  track: 11
+edges:

@@ -1,41 +1,56 @@
 package main
 
 import (
-	"bytes"
-	"encoding/binary"
-	"hash/fnv"
-	"log"
-	"sort"
+	"os"
 
 	"github.com/dominikbraun/graph"
+	"github.com/dominikbraun/graph/draw"
 )
 
+// type Node struct {
+// 	TrackID               int
+// 	AllowedTrackLocations []int
+// }
+
 type Node struct {
-	TrackID               int
-	AllowedTrackLocations []int
+	ID       string // unique name for the node
+	Track    int    // Track number (number of the piece)
+	FromLane int    // Lower end of the lane
+	ToLane   int    // Higher bound of the lane
 }
 
-var nodeHash = func(n Node) uint64 {
-	// Create the constant list of numbers
-	l := make([]int, len(n.AllowedTrackLocations)+1)
-	l[0] = n.TrackID
-	s := l[1:]
-	copy(s, n.AllowedTrackLocations)
-	sort.Ints(s) // sort only what is *after* the track ID
+type Edge struct {
+	Source string
+	Target string
+	Weight int
+}
 
-	// Convert to bytes
-	buf := new(bytes.Buffer)
-	for _, v := range s {
-		err := binary.Write(buf, binary.BigEndian, int32(v))
-		if err != nil {
-			log.Fatal("This should not happen.")
-		}
-	}
+var vertices = []Node{
+	Node{"13", 13, 1, 12},
+	Node{"20", 20, 1, 16},
+	Node{"04-a", 4, 1, 4},
+	Node{"04-b", 4, 5, 8},
+	Node{"04-c", 4, 9, 16},
+	Node{"21", 21, 1, 16},
+	Node{"16", 16, 1, 12},
+}
 
-	// Produce the hash
-	h := fnv.New64a()
-	h.Write(buf.Bytes())
-	return h.Sum64()
+var edges = []Edge{
+	Edge{"13", "20", 1},
+	// Edge{"13-a", "01-a", 1},
+	// Edge{"13-b", "01-b", 1},
+
+	Edge{"20", "04-c", 1},
+	Edge{"20", "04-a", 1},
+
+	Edge{"04-c", "21", 1},
+	Edge{"04-b", "21", 1},
+
+	Edge{"21", "16", 1},
+}
+
+var nodeHash = func(n Node) string {
+	return n.ID
 }
 
 // func buildTrackGraph() graph.Graph[int, int] {
@@ -121,7 +136,19 @@ var nodeHash = func(n Node) uint64 {
 // 	return g
 // }
 
-func trackGraph() {
+func trackGraph() graph.Graph[string, Node] {
 	g := graph.New(nodeHash)
-	g.AddVertex()
+	for _, node := range vertices {
+		g.AddVertex(node)
+	}
+	for _, edge := range edges {
+		g.AddEdge(edge.Source, edge.Target, graph.EdgeWeight(edge.Weight))
+	}
+
+	file, _ := os.Create("assets/track-graph.gv")
+	draw.DOT(g, file)
+	// To render the graph, you can run
+	// dot -Tsvg -O "assets/track-graph.gv"
+
+	return g
 }

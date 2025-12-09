@@ -77,19 +77,19 @@ func UI(client mqtt.Client) {
 		}
 	}
 
-	previousVehiclePosition := ""
-	client.Subscribe(vehiclePositionTopic, 1, func(c mqtt.Client, m mqtt.Message) {
-		var data positionPayload
-		err := json.Unmarshal(m.Payload(), &data)
-		if err != nil {
-			return
-		}
-		rectangles[data.ID].Show()
-		if previousVehiclePosition != "" {
-			rectangles[previousVehiclePosition].Hide()
-		}
-		previousVehiclePosition = data.ID
-	})
+	// previousVehiclePosition := ""
+	// client.Subscribe(vehiclePositionTopic, 1, func(c mqtt.Client, m mqtt.Message) {
+	// 	var data positionPayload
+	// 	err := json.Unmarshal(m.Payload(), &data)
+	// 	if err != nil {
+	// 		return
+	// 	}
+	// 	rectangles[data.ID].Show()
+	// 	if previousVehiclePosition != "" {
+	// 		rectangles[previousVehiclePosition].Hide()
+	// 	}
+	// 	previousVehiclePosition = data.ID
+	// })
 
 	grid := container.New(layout.NewGridLayout(5), cells...)
 	w.SetContent(grid)
