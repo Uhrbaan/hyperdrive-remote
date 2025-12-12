@@ -1,20 +1,32 @@
 package path
 
 import (
-	"container/ring"
 	"encoding/json"
 	"fmt"
 	"log"
-	"maps"
 	"slices"
+	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/dominikbraun/graph"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
+
+const (
+	rootTopic               = "/hobHq10yb9dKwxrdfhtT"
+	vehicleTrackTopicFormat = "Anki/Vehicles/U/%s/E/track"
+	vehiclePositionTopic    = rootTopic + "/vehicle/position"
+	vehiclePredictionTopic  = rootTopic + "/vehicle/prediction"
+	vehicleInstructionTopic = rootTopic + "/vehicle/instruction"
+)
+
+var trackTypes = map[int]string{
+	13: "curve", 16: "curve", 15: "curve", 14: "curve",
+	4: "intersection", 1: "intersection", 5: "intersection", 2: "intersection",
+	9: "intersection", 6: "intersection", 12: "intersection", 18: "intersection", 19: "intersection", 3: "intersection",
+}
 
 type trackPayload struct {
 	Timestamp uint64 `json:"timestamp"`
@@ -29,48 +41,28 @@ type positionPayload struct {
 	ID string `json:"id"`
 }
 
-const (
-	vehicleTrackTopicFormat = "Anki/Vehicles/U/%s/E/track"
-	vehiclePositionTopic    = "/hobHq10yb9dKwxrdfhtT/vehicle/position"
-)
-
-var (
-	mu            sync.Mutex
-	target        = "23"
-	intersections = []int{4, 1, 5, 2, 9, 6, 12, 18, 19, 3}
-	curves        = []int{13, 16, 15, 14}
-	history       = ring.New(3) // The shortest loop is 6 elements long
-)
-
-func sign(a int) int {
-	if a < 0 {
-		return -1
-	} else {
-		return 1
-	}
+type instructionPayload struct {
+	Id         string `json:"id"`
+	LaneChange string `json:"lane_change"`
+	Forward    bool   `json:"forward"`
 }
 
-func trackShape(track int) string {
-	switch true {
-	case slices.Contains(curves, track):
-		return "curve"
-	case slices.Contains(intersections, track):
-		return "intersection"
-	default:
-		return "straight"
+func getTrackShape(trackID int) string {
+	if shape, exists := trackTypes[trackID]; exists {
+		return shape
 	}
+	return "straight"
 }
 
-func position(track, lane int) string {
-	shape := trackShape(track)
+func calculatePositionNode(trackID, lane int) string {
+	shape := getTrackShape(trackID)
 	var suffix string
 
 	switch shape {
 	case "curve", "straight":
+		suffix = "top"
 		if lane < 9 {
 			suffix = "bottom"
-		} else {
-			suffix = "top"
 		}
 	case "intersection":
 		if lane < 5 {
@@ -81,180 +73,197 @@ func position(track, lane int) string {
 			suffix = "bottom"
 		}
 	}
-
-	return fmt.Sprintf("%02d.%s.%s", track, shape, suffix)
+	return fmt.Sprintf("%02d.%s.%s", trackID, shape, suffix)
 }
 
-func VehicleTracking(client mqtt.Client, track graph.Graph[string, string]) {
-	vehicleIdCh := make(chan string)
-	client.Subscribe(vehicleIDTopic, 1, func(c mqtt.Client, m mqtt.Message) {
-		var data vehicleIdPayload
-		json.Unmarshal(m.Payload(), &data)
-		vehicleIdCh <- data.ID
-	})
-	id := <-vehicleIdCh
+func getPredictionProbability(nodeID string) int {
+	switch {
+	case strings.Contains(nodeID, "curve.inner"):
+		return 1
+	case strings.Contains(nodeID, "intersection.low"), strings.Contains(nodeID, "intersection.high"):
+		return 2
+	case strings.Contains(nodeID, "intersection.bottom"):
+		return 3
+	case strings.Contains(nodeID, "curve.outer"):
+		return 4
+	case strings.Contains(nodeID, "straight"):
+		return 5
+	default:
+		return 0
+	}
+}
 
-	trackUpdate := make(chan trackPayload)
-	client.Subscribe(fmt.Sprintf(vehicleTrackTopicFormat, id), 1, func(c mqtt.Client, m mqtt.Message) {
+func VehicleTracking(client mqtt.Client, trackGraph graph.Graph[string, string]) {
+	vehicleID := waitForVehicleID(client)
+	log.Printf("Starting tracking for Vehicle ID: %s", vehicleID)
+
+	trackCh := make(chan trackPayload)
+	client.Subscribe(fmt.Sprintf(vehicleTrackTopicFormat, vehicleID), 1, func(c mqtt.Client, m mqtt.Message) {
 		var data []trackPayload
-
-		err := json.Unmarshal(m.Payload(), &data)
-		if err != nil {
-			log.Println("Could not unmarshal data.")
-			fmt.Println(string(m.Payload()))
+		if err := json.Unmarshal(m.Payload(), &data); err != nil {
+			log.Printf("Error unmarshalling track: %v", err)
 			return
 		}
-		fmt.Println(string(m.Payload()))
-
-		trackUpdate <- data[0]
+		if len(data) > 0 {
+			trackCh <- data[0]
+		}
 	})
 
-	client.Subscribe(vehicleTargetTopic, 1, func(c mqtt.Client, m mqtt.Message) {
-		var data tilePayload
-		err := json.Unmarshal(m.Payload(), &data)
-		if err != nil {
-			log.Println("Could not unmarshal message:", string(m.Payload()))
+	nextStepCh := make(chan string)
+	client.Subscribe(nextStepTopic, 1, func(c mqtt.Client, m mqtt.Message) {
+		var data nextStepPayload
+		if err := json.Unmarshal(m.Payload(), &data); err != nil {
+			log.Printf("Error unmarshalling next step: %v", err)
 			return
 		}
-
-		// sanitize: we only get a number, and we need to map it to a string with the correct suffix if necessary.
-		n := data.ID
-		suffix := ""
-		if slices.Contains(intersections, n) {
-			// if the selected element is an intersection, add a -c suffix (the car shall stop on the straight path).
-			suffix = "-c"
-		}
-
-		if n == 0 || n == 17 {
-			// we cannot stop on the crossing. This is invalid.
-			log.Println("It is not allowed to stop on the crossing. Setting it to the default value 15.")
-			n = 15
-		}
-
-		mu.Lock()
-		target = fmt.Sprintf("%02d%s", n, suffix)
-		mu.Unlock()
+		nextStepCh <- data.NextStep
 	})
 
-	adjacency, err := track.AdjacencyMap()
+	adjacency, err := trackGraph.AdjacencyMap()
 	if err != nil {
-		log.Fatal("Unable to generate the Adjacency map:", err)
+		log.Fatal("Unable to generate Adjacency map:", err)
 	}
 
-	var duration time.Duration = 1500 * time.Millisecond
-	timer := time.NewTicker(duration)
+	history := make([]string, 0, 4)
+	predictionTimeout := 1000 * time.Millisecond
+	timer := time.NewTicker(predictionTimeout)
+	defer timer.Stop()
+
+	updateHistory := func(newNode string) {
+		if len(history) > 0 && history[len(history)-1] == newNode {
+			return
+		}
+		if len(history) >= 4 {
+			history = history[1:]
+		}
+		history = append(history, newNode)
+	}
 
 	for {
+		var currentPositionNode string
+		stateUpdated := false
+
 		select {
-		case track := <-trackUpdate:
-			fmt.Println("Current track history is:")
-			history.Do(func(a any) {
-				if a == nil {
-					return
-				}
-				fmt.Println("\t" + a.(string))
-			})
-
-			node := position(track.Value.TrackID, track.Value.TrackLocation)
-			history = history.Next()
-			history.Value = node
-
-			payload, _ := json.Marshal(tilePayload{
-				ID: track.Value.TrackID,
-			})
-			client.Publish(vehiclePositionTopic, 1, false, payload)
-
-			timer.Reset(duration)
-
-		case <-timer.C:
-			fmt.Println("Current track history is:")
-			history.Do(func(a any) {
-				if a == nil {
-					return
-				}
-				fmt.Println("\t" + a.(string))
-			})
-
-			if history.Value == nil {
+		case trackData := <-trackCh: // Getting data from vehicle
+			if trackData.Value.TrackID == 0 {
+				log.Println("Received invalid ID of 0")
 				continue
 			}
 
-			current := history.Value.(string)
-			neighbours := adjacency[current]
+			currentPositionNode = calculatePositionNode(trackData.Value.TrackID, trackData.Value.TrackLocation)
+			updateHistory(currentPositionNode)
 
-			fmt.Println("Current neighbours of", current, "are:")
-			for k := range neighbours {
-				fmt.Println("\t", k)
+			fmt.Printf("Track Update. History: %v\n", history)
+
+			sendJSON(client, vehiclePositionTopic, tilePayload{ID: trackData.Value.TrackID})
+			timer.Reset(predictionTimeout)
+			stateUpdated = true
+
+		case <-timer.C: // prediction on timeout
+			if len(history) == 0 {
+				continue
 			}
+			fmt.Println("------ PREDICTION --------")
 
-			// for the prediction, we assume the car did not change lanes, so we remove any keys with the ID of the current one
-			for k := range neighbours {
-				if k[:2] == current[:2] {
-					fmt.Println("Removing key", k, "since we are not turning.")
-					delete(neighbours, k)
-				}
-			}
+			currentNode := history[len(history)-1]
+			predictedNode, ok := predictNextNode(currentNode, history, adjacency)
 
-			history.Do(func(a any) {
-				if a == nil {
-					return
-				}
-				// remove neighbours we've already been to
-				delete(neighbours, a.(string))
-			})
-
-			if len(neighbours) == 0 {
+			if !ok {
+				log.Println("Could not predict next node")
 				continue
 			}
 
-			// finally, we sort the remaining neighbours by the probability that it did not get detected. Usually, the left and right sections of intersections tend to not get detected, as well as inner curves
-			neighboursList := slices.SortedFunc(maps.Keys(neighbours), func(a, b string) int {
-				probability := func(s string) int {
-					switch true {
-					case strings.Contains(s, "curve.inner"):
-						return 1
-					case strings.Contains(s, "intersection.low"):
-						return 2
-					case strings.Contains(s, "intersection.high"):
-						return 2
-					case strings.Contains(s, "intersection.bottom"):
-						return 3
-					case strings.Contains(s, "curve.outer"):
-						return 4
-					case strings.Contains(s, "straight"):
-						return 5
-					default:
-						return 0
-					}
-				}
+			// Extract ID from string (e.g., "02.curve" -> 2)
+			predictedID, _ := strconv.Atoi(predictedNode[:2])
 
-				A := probability(a)
-				B := probability(b)
+			fmt.Printf("Predicted: %s. New History: %v\n", predictedNode, history)
+			sendJSON(client, vehiclePredictionTopic, tilePayload{ID: predictedID})
 
-				return A - B
-			})
+			updateHistory(predictedNode)
+			currentPositionNode = predictedNode
+			stateUpdated = true
 
-			// now, the most probable neighbour is the first in the list (hopefully). We add it to the history and send a message.
-			fmt.Println("Probable neighbours of", current, "are:")
-			for _, k := range neighboursList {
-				fmt.Println("\t", k)
+		case nextStep := <-nextStepCh:
+			// if ids are the same and changing from bottom -> top or the opposite
+			if nextStep[:2] != currentPositionNode[:2] {
+				continue
 			}
 
-			fmt.Println("Current history with current", current, "are:")
-			history.Do(func(a any) {
-				if a != nil {
-					fmt.Println("\t" + a.(string))
-				}
-			})
+			instruction := instructionPayload{Id: vehicleID}
+			// turn right
+			if strings.Contains(nextStep, "top") && strings.Contains(currentPositionNode, "bottom") {
+				instruction.LaneChange = "rigth"
+			} else {
+				instruction.LaneChange = "left"
+			}
 
-			id, _ := strconv.Atoi(neighboursList[0][:2])
-			payload, _ := json.Marshal(tilePayload{
-				ID: id,
-			})
-			client.Publish(vehiclePositionTopic, 1, false, payload)
+			// TODO: implement calculation to know which direction we should drive in.
+			instruction.Forward = true
 
-			history = history.Next()
-			history.Value = neighboursList[0]
+			sendJSON(client, vehicleInstructionTopic, instruction)
+		}
+
+		if stateUpdated && currentPositionNode != "" {
+			sendJSON(client, vehiclePositionTopic, positionPayload{ID: currentPositionNode})
 		}
 	}
+}
+
+// waitForVehicleID blocks until a vehicle ID is received.
+func waitForVehicleID(client mqtt.Client) string {
+	ch := make(chan string)
+	token := client.Subscribe(vehicleIDTopic, 1, func(c mqtt.Client, m mqtt.Message) {
+		var data vehicleIdPayload
+		if err := json.Unmarshal(m.Payload(), &data); err == nil {
+			ch <- data.ID
+		}
+	})
+	token.Wait()
+
+	defer client.Unsubscribe(vehicleIDTopic)
+	return <-ch
+}
+
+// predictNextNode calculates the most likely next node based on history and graph.
+func predictNextNode(current string, history []string, adjacency map[string]map[string]graph.Edge[string]) (string, bool) {
+	neighbours, exists := adjacency[current]
+	if !exists || len(neighbours) == 0 {
+		return "", false
+	}
+
+	// Filter candidates
+	candidates := make([]string, 0, len(neighbours))
+	currentPrefix := current[:2] // Assumes ID format "XX....."
+
+	for k := range neighbours {
+		// not the same tile id (don't change lanes)
+		if len(k) >= 2 && k[:2] == currentPrefix {
+			continue
+		}
+		// don't go back
+		if slices.Contains(history, k) {
+			continue
+		}
+		candidates = append(candidates, k)
+	}
+
+	if len(candidates) == 0 {
+		return "", false
+	}
+
+	// Sort by probability (Ascending order based on original code logic)
+	sort.Slice(candidates, func(i, j int) bool {
+		return getPredictionProbability(candidates[i]) < getPredictionProbability(candidates[j])
+	})
+
+	return candidates[0], true
+}
+
+func sendJSON(client mqtt.Client, topic string, payload interface{}) {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		log.Printf("Failed to marshal payload for %s: %v", topic, err)
+		return
+	}
+	client.Publish(topic, 1, false, data)
 }

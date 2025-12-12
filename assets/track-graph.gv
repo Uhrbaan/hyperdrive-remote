@@ -1,165 +1,11 @@
 strict graph {
 
 
-	"16.curve.inner" [  weight=0 ];
+	"03.intersection.low" [  weight=0 ];
 
-	"16.curve.inner" -- "21.straight.bottom" [  weight=0 ];
+	"03.intersection.low" -- "06.intersection.low" [  weight=0 ];
 
-	"16.curve.inner" -- "16.curve.outer" [  weight=0 ];
-
-	"16.curve.inner" -- "02.intersection.high" [  weight=0 ];
-
-	"12.intersection.bottom" [  weight=0 ];
-
-	"12.intersection.bottom" -- "02.intersection.bottom" [  weight=0 ];
-
-	"12.intersection.bottom" -- "19.intersection.bottom" [  weight=0 ];
-
-	"06.intersection.bottom" [  weight=0 ];
-
-	"06.intersection.bottom" -- "10.straight.top" [  weight=0 ];
-
-	"06.intersection.bottom" -- "11.straight.top" [  weight=0 ];
-
-	"13.curve.inner" [  weight=0 ];
-
-	"13.curve.inner" -- "01.intersection.high" [  weight=0 ];
-
-	"13.curve.inner" -- "20.straight.bottom" [  weight=0 ];
-
-	"13.curve.inner" -- "13.curve.outer" [  weight=0 ];
-
-	"05.intersection.high" [  weight=0 ];
-
-	"05.intersection.high" -- "04.intersection.high" [  weight=0 ];
-
-	"05.intersection.high" -- "08.straight.top" [  weight=0 ];
-
-	"09.intersection.high" [  weight=0 ];
-
-	"09.intersection.high" -- "11.straight.top" [  weight=0 ];
-
-	"09.intersection.high" -- "01.intersection.low" [  weight=0 ];
-
-	"10.straight.low" [  weight=0 ];
-
-	"10.straight.low" -- "06.intersection.high" [  weight=0 ];
-
-	"12.intersection.low" [  weight=0 ];
-
-	"12.intersection.low" -- "19.intersection.high" [  weight=0 ];
-
-	"12.intersection.low" -- "10.straight.bottom" [  weight=0 ];
-
-	"03.intersection.bottom" [  weight=0 ];
-
-	"03.intersection.bottom" -- "24.straight.bottom" [  weight=0 ];
-
-	"03.intersection.bottom" -- "25.straight.bottom" [  weight=0 ];
-
-	"15.curve.outer" [  weight=0 ];
-
-	"15.curve.outer" -- "19.intersection.bottom" [  weight=0 ];
-
-	"15.curve.outer" -- "25.straight.bottom" [  weight=0 ];
-
-	"19.intersection.low" [  weight=0 ];
-
-	"19.intersection.low" -- "23.straight.bottom" [  weight=0 ];
-
-	"19.intersection.low" -- "15.curve.inner" [  weight=0 ];
-
-	"24.straight.top" [  weight=0 ];
-
-	"24.straight.top" -- "14.curve.inner" [  weight=0 ];
-
-	"24.straight.top" -- "03.intersection.low" [  weight=0 ];
-
-	"22.straight.bottom" [  weight=0 ];
-
-	"22.straight.bottom" -- "23.straight.bottom" [  weight=0 ];
-
-	"22.straight.bottom" -- "18.intersection.low" [  weight=0 ];
-
-	"01.intersection.low" [  weight=0 ];
-
-	"01.intersection.low" -- "02.straight.bottom" [  weight=0 ];
-
-	"01.intersection.low" -- "09.intersection.high" [  weight=0 ];
-
-	"06.intersection.high" [  weight=0 ];
-
-	"06.intersection.high" -- "10.straight.low" [  weight=0 ];
-
-	"06.intersection.high" -- "03.intersection.high" [  weight=0 ];
-
-	"02.straight.top" [  weight=0 ];
-
-	"02.straight.top" -- "01.intersection.high" [  weight=0 ];
-
-	"02.straight.top" -- "05.intersection.low" [  weight=0 ];
-
-	"02.straight.top" -- "02.straight.bottom" [  weight=0 ];
-
-	"02.intersection.low" [  weight=0 ];
-
-	"02.intersection.low" -- "08.straight.bottom" [  weight=0 ];
-
-	"02.intersection.low" -- "12.intersection.high" [  weight=0 ];
-
-	"14.curve.inner" [  weight=0 ];
-
-	"14.curve.inner" -- "18.intersection.low" [  weight=0 ];
-
-	"14.curve.inner" -- "24.straight.top" [  weight=0 ];
-
-	"22.straight.top" [  weight=0 ];
-
-	"22.straight.top" -- "23.straight.top" [  weight=0 ];
-
-	"22.straight.top" -- "18.intersection.high" [  weight=0 ];
-
-	"13.curve.outer" [  weight=0 ];
-
-	"13.curve.outer" -- "20.straight.top" [  weight=0 ];
-
-	"13.curve.outer" -- "13.curve.inner" [  weight=0 ];
-
-	"13.curve.outer" -- "01.intersection.bottom" [  weight=0 ];
-
-	"18.intersection.bottom" [  weight=0 ];
-
-	"18.intersection.bottom" -- "09.intersection.bottom" [  weight=0 ];
-
-	"18.intersection.bottom" -- "14.curve.outer" [  weight=0 ];
-
-	"03.intersection.high" [  weight=0 ];
-
-	"03.intersection.high" -- "06.intersection.high" [  weight=0 ];
-
-	"03.intersection.high" -- "25.straight.top" [  weight=0 ];
-
-	"11.straight.bottom" [  weight=0 ];
-
-	"11.straight.bottom" -- "09.intersection.low" [  weight=0 ];
-
-	"11.straight.bottom" -- "06.intersection.low" [  weight=0 ];
-
-	"11.straight.bottom" -- "11.straight.top" [  weight=0 ];
-
-	"02.intersection.bottom" [  weight=0 ];
-
-	"02.intersection.bottom" -- "16.curve.outer" [  weight=0 ];
-
-	"02.intersection.bottom" -- "12.intersection.bottom" [  weight=0 ];
-
-	"20.straight.top" [  weight=0 ];
-
-	"20.straight.top" -- "13.curve.outer" [  weight=0 ];
-
-	"20.straight.top" -- "04.intersection.bottom" [  weight=0 ];
-
-	"20.straight.top" -- "20.straight.bottom" [  weight=0 ];
+	"03.intersection.low" -- "24.straight.top" [  weight=0 ];
 
 	"19.intersection.high" [  weight=0 ];
 
@@ -167,97 +13,11 @@ strict graph {
 
 	"19.intersection.high" -- "12.intersection.low" [  weight=0 ];
 
-	"20.straight.bottom" [  weight=0 ];
+	"19.intersection.low" [  weight=0 ];
 
-	"20.straight.bottom" -- "13.curve.inner" [  weight=0 ];
+	"19.intersection.low" -- "23.straight.bottom" [  weight=0 ];
 
-	"20.straight.bottom" -- "04.intersection.low" [  weight=0 ];
-
-	"20.straight.bottom" -- "20.straight.top" [  weight=0 ];
-
-	"25.straight.bottom" [  weight=0 ];
-
-	"25.straight.bottom" -- "15.curve.outer" [  weight=0 ];
-
-	"25.straight.bottom" -- "03.intersection.bottom" [  weight=0 ];
-
-	"02.straight.bottom" [  weight=0 ];
-
-	"02.straight.bottom" -- "05.intersection.bottom" [  weight=0 ];
-
-	"02.straight.bottom" -- "02.straight.top" [  weight=0 ];
-
-	"02.straight.bottom" -- "08.straight.top" [  weight=0 ];
-
-	"02.straight.bottom" -- "01.intersection.low" [  weight=0 ];
-
-	"14.curve.outer" [  weight=0 ];
-
-	"14.curve.outer" -- "18.intersection.bottom" [  weight=0 ];
-
-	"14.curve.outer" -- "24.straight.bottom" [  weight=0 ];
-
-	"02.intersection.high" [  weight=0 ];
-
-	"02.intersection.high" -- "08.straight.top" [  weight=0 ];
-
-	"02.intersection.high" -- "16.curve.inner" [  weight=0 ];
-
-	"24.straight.bottom" [  weight=0 ];
-
-	"24.straight.bottom" -- "14.curve.outer" [  weight=0 ];
-
-	"24.straight.bottom" -- "03.intersection.bottom" [  weight=0 ];
-
-	"10.straight.bottom" [  weight=0 ];
-
-	"10.straight.bottom" -- "12.intersection.low" [  weight=0 ];
-
-	"10.straight.bottom" -- "10.straight.top" [  weight=0 ];
-
-	"25.straight.top" [  weight=0 ];
-
-	"25.straight.top" -- "03.intersection.high" [  weight=0 ];
-
-	"25.straight.top" -- "15.curve.inner" [  weight=0 ];
-
-	"01.intersection.high" [  weight=0 ];
-
-	"01.intersection.high" -- "13.curve.inner" [  weight=0 ];
-
-	"01.intersection.high" -- "02.straight.top" [  weight=0 ];
-
-	"19.intersection.bottom" [  weight=0 ];
-
-	"19.intersection.bottom" -- "12.intersection.bottom" [  weight=0 ];
-
-	"19.intersection.bottom" -- "15.curve.outer" [  weight=0 ];
-
-	"06.intersection.low" [  weight=0 ];
-
-	"06.intersection.low" -- "03.intersection.low" [  weight=0 ];
-
-	"06.intersection.low" -- "11.straight.bottom" [  weight=0 ];
-
-	"09.intersection.low" [  weight=0 ];
-
-	"09.intersection.low" -- "11.straight.bottom" [  weight=0 ];
-
-	"09.intersection.low" -- "18.intersection.high" [  weight=0 ];
-
-	"21.straight.bottom" [  weight=0 ];
-
-	"21.straight.bottom" -- "04.intersection.high" [  weight=0 ];
-
-	"21.straight.bottom" -- "16.curve.inner" [  weight=0 ];
-
-	"21.straight.bottom" -- "21.straight.top" [  weight=0 ];
-
-	"18.intersection.high" [  weight=0 ];
-
-	"18.intersection.high" -- "09.intersection.low" [  weight=0 ];
-
-	"18.intersection.high" -- "22.straight.top" [  weight=0 ];
+	"19.intersection.low" -- "15.curve.inner" [  weight=0 ];
 
 	"05.intersection.low" [  weight=0 ];
 
@@ -265,55 +25,63 @@ strict graph {
 
 	"05.intersection.low" -- "04.intersection.low" [  weight=0 ];
 
-	"12.intersection.high" [  weight=0 ];
+	"20.straight.bottom" [  weight=0 ];
 
-	"12.intersection.high" -- "10.straight.top" [  weight=0 ];
+	"20.straight.bottom" -- "04.intersection.low" [  weight=0 ];
+
+	"20.straight.bottom" -- "20.straight.top" [  weight=0 ];
+
+	"20.straight.bottom" -- "13.curve.inner" [  weight=0 ];
+
+	"12.intersection.high" [  weight=0 ];
 
 	"12.intersection.high" -- "02.intersection.low" [  weight=0 ];
 
-	"23.straight.bottom" [  weight=0 ];
+	"12.intersection.high" -- "10.straight.top" [  weight=0 ];
 
-	"23.straight.bottom" -- "22.straight.bottom" [  weight=0 ];
+	"06.intersection.high" [  weight=0 ];
 
-	"23.straight.bottom" -- "19.intersection.low" [  weight=0 ];
+	"06.intersection.high" -- "10.straight.bottom" [  weight=0 ];
 
-	"21.straight.top" [  weight=0 ];
-
-	"21.straight.top" -- "21.straight.bottom" [  weight=0 ];
-
-	"21.straight.top" -- "04.intersection.bottom" [  weight=0 ];
-
-	"21.straight.top" -- "16.curve.outer" [  weight=0 ];
-
-	"04.intersection.bottom" [  weight=0 ];
-
-	"04.intersection.bottom" -- "20.straight.top" [  weight=0 ];
-
-	"04.intersection.bottom" -- "21.straight.top" [  weight=0 ];
-
-	"05.intersection.bottom" [  weight=0 ];
-
-	"05.intersection.bottom" -- "02.straight.bottom" [  weight=0 ];
-
-	"05.intersection.bottom" -- "08.straight.bottom" [  weight=0 ];
-
-	"23.straight.top" [  weight=0 ];
-
-	"23.straight.top" -- "22.straight.top" [  weight=0 ];
-
-	"23.straight.top" -- "19.intersection.high" [  weight=0 ];
-
-	"01.intersection.bottom" [  weight=0 ];
-
-	"01.intersection.bottom" -- "13.curve.outer" [  weight=0 ];
-
-	"01.intersection.bottom" -- "09.intersection.bottom" [  weight=0 ];
+	"06.intersection.high" -- "03.intersection.high" [  weight=0 ];
 
 	"04.intersection.low" [  weight=0 ];
 
+	"04.intersection.low" -- "05.intersection.low" [  weight=0 ];
+
 	"04.intersection.low" -- "20.straight.bottom" [  weight=0 ];
 
-	"04.intersection.low" -- "05.intersection.low" [  weight=0 ];
+	"09.intersection.low" [  weight=0 ];
+
+	"09.intersection.low" -- "11.straight.bottom" [  weight=0 ];
+
+	"09.intersection.low" -- "18.intersection.high" [  weight=0 ];
+
+	"03.intersection.high" [  weight=0 ];
+
+	"03.intersection.high" -- "25.straight.top" [  weight=0 ];
+
+	"03.intersection.high" -- "06.intersection.high" [  weight=0 ];
+
+	"08.straight.bottom" [  weight=0 ];
+
+	"08.straight.bottom" -- "05.intersection.bottom" [  weight=0 ];
+
+	"08.straight.bottom" -- "02.intersection.low" [  weight=0 ];
+
+	"09.intersection.high" [  weight=0 ];
+
+	"09.intersection.high" -- "01.intersection.low" [  weight=0 ];
+
+	"09.intersection.high" -- "11.straight.top" [  weight=0 ];
+
+	"11.straight.top" [  weight=0 ];
+
+	"11.straight.top" -- "09.intersection.high" [  weight=0 ];
+
+	"11.straight.top" -- "06.intersection.bottom" [  weight=0 ];
+
+	"11.straight.top" -- "11.straight.bottom" [  weight=0 ];
 
 	"04.intersection.high" [  weight=0 ];
 
@@ -321,37 +89,29 @@ strict graph {
 
 	"04.intersection.high" -- "05.intersection.high" [  weight=0 ];
 
-	"18.intersection.low" [  weight=0 ];
+	"25.straight.top" [  weight=0 ];
 
-	"18.intersection.low" -- "22.straight.bottom" [  weight=0 ];
+	"25.straight.top" -- "15.curve.inner" [  weight=0 ];
 
-	"18.intersection.low" -- "14.curve.inner" [  weight=0 ];
+	"25.straight.top" -- "25.straight.bottom" [  weight=0 ];
 
-	"08.straight.bottom" [  weight=0 ];
+	"25.straight.top" -- "03.intersection.high" [  weight=0 ];
 
-	"08.straight.bottom" -- "02.intersection.low" [  weight=0 ];
+	"24.straight.top" [  weight=0 ];
 
-	"08.straight.bottom" -- "05.intersection.bottom" [  weight=0 ];
+	"24.straight.top" -- "14.curve.inner" [  weight=0 ];
 
-	"08.straight.top" [  weight=0 ];
+	"24.straight.top" -- "03.intersection.low" [  weight=0 ];
 
-	"08.straight.top" -- "02.straight.bottom" [  weight=0 ];
+	"24.straight.top" -- "24.straight.bottom" [  weight=0 ];
 
-	"08.straight.top" -- "05.intersection.high" [  weight=0 ];
+	"20.straight.top" [  weight=0 ];
 
-	"08.straight.top" -- "02.intersection.high" [  weight=0 ];
+	"20.straight.top" -- "20.straight.bottom" [  weight=0 ];
 
-	"15.curve.inner" [  weight=0 ];
+	"20.straight.top" -- "13.curve.outer" [  weight=0 ];
 
-	"15.curve.inner" -- "19.intersection.low" [  weight=0 ];
-
-	"15.curve.inner" -- "25.straight.top" [  weight=0 ];
-
-	"03.intersection.low" [  weight=0 ];
-
-	"03.intersection.low" -- "06.intersection.low" [  weight=0 ];
-
-	"03.intersection.low" -- "24.straight.top" [  weight=0 ];
+	"20.straight.top" -- "04.intersection.bottom" [  weight=0 ];
 
 	"10.straight.top" [  weight=0 ];
 
@@ -361,26 +121,278 @@ strict graph {
 
 	"10.straight.top" -- "10.straight.bottom" [  weight=0 ];
 
+	"19.intersection.bottom" [  weight=0 ];
+
+	"19.intersection.bottom" -- "12.intersection.bottom" [  weight=0 ];
+
+	"19.intersection.bottom" -- "15.curve.outer" [  weight=0 ];
+
+	"02.straight.bottom" [  weight=0 ];
+
+	"02.straight.bottom" -- "01.intersection.low" [  weight=0 ];
+
+	"02.straight.bottom" -- "05.intersection.bottom" [  weight=0 ];
+
+	"02.straight.bottom" -- "02.straight.top" [  weight=0 ];
+
+	"02.straight.bottom" -- "08.straight.top" [  weight=0 ];
+
+	"22.straight.bottom" [  weight=0 ];
+
+	"22.straight.bottom" -- "18.intersection.low" [  weight=0 ];
+
+	"22.straight.bottom" -- "22.straight.top" [  weight=0 ];
+
+	"22.straight.bottom" -- "23.straight.bottom" [  weight=0 ];
+
+	"18.intersection.low" [  weight=0 ];
+
+	"18.intersection.low" -- "22.straight.bottom" [  weight=0 ];
+
+	"18.intersection.low" -- "14.curve.inner" [  weight=0 ];
+
+	"15.curve.inner" [  weight=0 ];
+
+	"15.curve.inner" -- "19.intersection.low" [  weight=0 ];
+
+	"15.curve.inner" -- "25.straight.top" [  weight=0 ];
+
+	"03.intersection.bottom" [  weight=0 ];
+
+	"03.intersection.bottom" -- "25.straight.bottom" [  weight=0 ];
+
+	"03.intersection.bottom" -- "24.straight.bottom" [  weight=0 ];
+
+	"02.intersection.high" [  weight=0 ];
+
+	"02.intersection.high" -- "08.straight.top" [  weight=0 ];
+
+	"02.intersection.high" -- "16.curve.inner" [  weight=0 ];
+
+	"21.straight.top" [  weight=0 ];
+
+	"21.straight.top" -- "04.intersection.bottom" [  weight=0 ];
+
+	"21.straight.top" -- "16.curve.outer" [  weight=0 ];
+
+	"21.straight.top" -- "21.straight.bottom" [  weight=0 ];
+
+	"14.curve.inner" [  weight=0 ];
+
+	"14.curve.inner" -- "24.straight.top" [  weight=0 ];
+
+	"14.curve.inner" -- "18.intersection.low" [  weight=0 ];
+
+	"14.curve.inner" -- "14.intersection.outer" [  weight=0 ];
+
+	"06.intersection.bottom" [  weight=0 ];
+
+	"06.intersection.bottom" -- "11.straight.top" [  weight=0 ];
+
+	"06.intersection.bottom" -- "10.straight.top" [  weight=0 ];
+
+	"13.curve.outer" [  weight=0 ];
+
+	"13.curve.outer" -- "20.straight.top" [  weight=0 ];
+
+	"13.curve.outer" -- "01.intersection.bottom" [  weight=0 ];
+
+	"18.intersection.high" [  weight=0 ];
+
+	"18.intersection.high" -- "09.intersection.low" [  weight=0 ];
+
+	"18.intersection.high" -- "22.straight.top" [  weight=0 ];
+
+	"06.intersection.low" [  weight=0 ];
+
+	"06.intersection.low" -- "03.intersection.low" [  weight=0 ];
+
+	"06.intersection.low" -- "11.straight.bottom" [  weight=0 ];
+
+	"02.intersection.low" [  weight=0 ];
+
+	"02.intersection.low" -- "12.intersection.high" [  weight=0 ];
+
+	"02.intersection.low" -- "08.straight.bottom" [  weight=0 ];
+
+	"02.straight.top" [  weight=0 ];
+
+	"02.straight.top" -- "01.intersection.high" [  weight=0 ];
+
+	"02.straight.top" -- "05.intersection.low" [  weight=0 ];
+
+	"02.straight.top" -- "02.straight.bottom" [  weight=0 ];
+
+	"23.straight.top" [  weight=0 ];
+
+	"23.straight.top" -- "19.intersection.high" [  weight=0 ];
+
+	"23.straight.top" -- "23.straight.bottom" [  weight=0 ];
+
+	"23.straight.top" -- "22.straight.top" [  weight=0 ];
+
+	"11.straight.bottom" [  weight=0 ];
+
+	"11.straight.bottom" -- "09.intersection.low" [  weight=0 ];
+
+	"11.straight.bottom" -- "06.intersection.low" [  weight=0 ];
+
+	"11.straight.bottom" -- "11.straight.top" [  weight=0 ];
+
+	"24.straight.bottom" [  weight=0 ];
+
+	"24.straight.bottom" -- "03.intersection.bottom" [  weight=0 ];
+
+	"24.straight.bottom" -- "14.curve.outer" [  weight=0 ];
+
+	"24.straight.bottom" -- "24.straight.top" [  weight=0 ];
+
+	"05.intersection.bottom" [  weight=0 ];
+
+	"05.intersection.bottom" -- "08.straight.bottom" [  weight=0 ];
+
+	"05.intersection.bottom" -- "02.straight.bottom" [  weight=0 ];
+
+	"04.intersection.bottom" [  weight=0 ];
+
+	"04.intersection.bottom" -- "20.straight.top" [  weight=0 ];
+
+	"04.intersection.bottom" -- "21.straight.top" [  weight=0 ];
+
 	"09.intersection.bottom" [  weight=0 ];
 
 	"09.intersection.bottom" -- "01.intersection.bottom" [  weight=0 ];
 
 	"09.intersection.bottom" -- "18.intersection.bottom" [  weight=0 ];
 
+	"23.straight.bottom" [  weight=0 ];
+
+	"23.straight.bottom" -- "19.intersection.low" [  weight=0 ];
+
+	"23.straight.bottom" -- "22.straight.bottom" [  weight=0 ];
+
+	"23.straight.bottom" -- "23.straight.top" [  weight=0 ];
+
+	"05.intersection.high" [  weight=0 ];
+
+	"05.intersection.high" -- "04.intersection.high" [  weight=0 ];
+
+	"05.intersection.high" -- "08.straight.top" [  weight=0 ];
+
+	"15.curve.outer" [  weight=0 ];
+
+	"15.curve.outer" -- "19.intersection.bottom" [  weight=0 ];
+
+	"15.curve.outer" -- "25.straight.bottom" [  weight=0 ];
+
+	"25.straight.bottom" [  weight=0 ];
+
+	"25.straight.bottom" -- "03.intersection.bottom" [  weight=0 ];
+
+	"25.straight.bottom" -- "25.straight.top" [  weight=0 ];
+
+	"25.straight.bottom" -- "15.curve.outer" [  weight=0 ];
+
+	"02.intersection.bottom" [  weight=0 ];
+
+	"02.intersection.bottom" -- "16.curve.outer" [  weight=0 ];
+
+	"02.intersection.bottom" -- "12.intersection.bottom" [  weight=0 ];
+
 	"16.curve.outer" [  weight=0 ];
-
-	"16.curve.outer" -- "21.straight.top" [  weight=0 ];
-
-	"16.curve.outer" -- "16.curve.inner" [  weight=0 ];
 
 	"16.curve.outer" -- "02.intersection.bottom" [  weight=0 ];
 
-	"11.straight.top" [  weight=0 ];
+	"16.curve.outer" -- "21.straight.top" [  weight=0 ];
 
-	"11.straight.top" -- "06.intersection.bottom" [  weight=0 ];
+	"18.intersection.bottom" [  weight=0 ];
 
-	"11.straight.top" -- "11.straight.bottom" [  weight=0 ];
+	"18.intersection.bottom" -- "09.intersection.bottom" [  weight=0 ];
 
-	"11.straight.top" -- "09.intersection.high" [  weight=0 ];
+	"18.intersection.bottom" -- "14.curve.outer" [  weight=0 ];
+
+	"08.straight.top" [  weight=0 ];
+
+	"08.straight.top" -- "05.intersection.high" [  weight=0 ];
+
+	"08.straight.top" -- "02.intersection.high" [  weight=0 ];
+
+	"08.straight.top" -- "02.straight.bottom" [  weight=0 ];
+
+	"12.intersection.bottom" [  weight=0 ];
+
+	"12.intersection.bottom" -- "02.intersection.bottom" [  weight=0 ];
+
+	"12.intersection.bottom" -- "19.intersection.bottom" [  weight=0 ];
+
+	"12.intersection.low" [  weight=0 ];
+
+	"12.intersection.low" -- "10.straight.bottom" [  weight=0 ];
+
+	"12.intersection.low" -- "19.intersection.high" [  weight=0 ];
+
+	"21.straight.bottom" [  weight=0 ];
+
+	"21.straight.bottom" -- "16.curve.inner" [  weight=0 ];
+
+	"21.straight.bottom" -- "21.straight.top" [  weight=0 ];
+
+	"21.straight.bottom" -- "04.intersection.high" [  weight=0 ];
+
+	"14.intersection.outer" [  weight=0 ];
+
+	"14.intersection.outer" -- "14.curve.inner" [  weight=0 ];
+
+	"16.curve.inner" [  weight=0 ];
+
+	"16.curve.inner" -- "21.straight.bottom" [  weight=0 ];
+
+	"16.curve.inner" -- "02.intersection.high" [  weight=0 ];
+
+	"14.curve.outer" [  weight=0 ];
+
+	"14.curve.outer" -- "18.intersection.bottom" [  weight=0 ];
+
+	"14.curve.outer" -- "24.straight.bottom" [  weight=0 ];
+
+	"01.intersection.low" [  weight=0 ];
+
+	"01.intersection.low" -- "02.straight.bottom" [  weight=0 ];
+
+	"01.intersection.low" -- "09.intersection.high" [  weight=0 ];
+
+	"13.curve.inner" [  weight=0 ];
+
+	"13.curve.inner" -- "20.straight.bottom" [  weight=0 ];
+
+	"13.curve.inner" -- "01.intersection.high" [  weight=0 ];
+
+	"01.intersection.high" [  weight=0 ];
+
+	"01.intersection.high" -- "02.straight.top" [  weight=0 ];
+
+	"01.intersection.high" -- "13.curve.inner" [  weight=0 ];
+
+	"10.straight.bottom" [  weight=0 ];
+
+	"10.straight.bottom" -- "06.intersection.high" [  weight=0 ];
+
+	"10.straight.bottom" -- "12.intersection.low" [  weight=0 ];
+
+	"10.straight.bottom" -- "10.straight.top" [  weight=0 ];
+
+	"01.intersection.bottom" [  weight=0 ];
+
+	"01.intersection.bottom" -- "13.curve.outer" [  weight=0 ];
+
+	"01.intersection.bottom" -- "09.intersection.bottom" [  weight=0 ];
+
+	"22.straight.top" [  weight=0 ];
+
+	"22.straight.top" -- "23.straight.top" [  weight=0 ];
+
+	"22.straight.top" -- "18.intersection.high" [  weight=0 ];
+
+	"22.straight.top" -- "22.straight.bottom" [  weight=0 ];
 
 }
