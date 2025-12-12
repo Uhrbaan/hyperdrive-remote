@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"hyperdrive/remote/pathfind/path"
 	"log"
 	"strconv"
 
@@ -13,7 +14,7 @@ import (
 const (
 	rpiIp    = "10.42.0.1"
 	mqttPort = 1883
-	// rpiIp                = "test.mosquitto.org"
+	// rpiIp    = "test.mosquitto.org"
 )
 
 func main() {
@@ -28,10 +29,11 @@ func main() {
 	}
 	log.Println("Connected to mosquitto broker on", rpiIp+":"+strconv.Itoa(mqttPort))
 
-	g := trackGraph()
-	path, _ := graph.ShortestPath(g, "16", "20")
-	fmt.Printf("%v is the shortest path from 16 to 20.\n", path)
-	go VehicleTracking(client, "8EF0310F", g)
+	g := path.ImportYaml()
+	p, _ := graph.ShortestPath(g, "13.curve.outer", "02.intersection.low")
+	fmt.Println(p)
 
-	// UI(client)
+	go path.VehicleTracking(client, g)
+
+	path.UI(client)
 }
