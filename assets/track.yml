@@ -1,123 +1,170 @@
-lanes: 
-  - straight:
-      - 1
-      - 2
-      - 3
-      - 4
-      - 5
-      - 6
-      - 7
-      - 8
-      - 9
-      - 10
-      - 11
-      - 12
-      - 13
-      - 14
-      - 15
-      - 16
-  
-  - curve: 
-      - 1
-      - 2
-      - 3
-      - 4
-      - 5
-      - 6
-      - 7
-      - 8
-      - 9
-      - 10
-      - 11
-      - 12
+---
+shapes:
+  curve:
+    lanes:
+      - name: outer
+        from: 1
+        to: 8
+      - name: inner
+        from: 9
+        to: 12
+  straight:
+    lanes:
+      - name: bottom
+        from: 1
+        to: 8
+      - name: top
+        from: 9
+        to: 16
+  intersection:
+    lanes:
+      - name: low
+        from: 1
+        to: 4
+      - name: high
+        from: 5
+        to: 8
+      - name: bottom
+        from: 9
+        to: 16
+  crossing:
+    lanes: 
+      - 
 
-  - t-section-bottom:
-      - 9
-      - 10 
-      - 11
-      - 12
-      - 13
-      - 14
-      - 15 
-      - 16
-  
-  - t-section-left:
-      - 1
-      - 2
-      - 3 
-      - 4
-
-  - t-section-right: 
-      - 5
-      - 6
-      - 7
-      - 8
-
-  - intersection-horizontal:
-      - 0
-
-vertices:
-- id: '13'
-  track: 13
-  shape: curve
-- id: '20'
-  shape: straight
-  track: 20
-- id: '04-bottom'
-  shape: t-section-bottom
-  track: 4
-- id: '04-left'
-  shape: t-section-left
-  track: 4
-- id: '04-right'
-  shape: t-section-right 
-  track: 4
-- id: '16'
-  shape: curve 
-  track: 16 
-- id: '01-bottom'
-  shape: t-section-bottom 
-  track: 1
-- id: '01-left'
-  shape: t-section-left 
-  track: 1
-- id: '01-right'
-  shape: t-section-right 
-  track: 1
-- id: '07'
-  shape: straight
-  track: 7
-- id: '05-bottom'
-  shape: t-section-bottom 
-  track: 5
-- id: '05-left'
-  shape: t-section-left 
-  track: 5
-- id: '05-right'
-  shape: t-section-right 
-  track: 5
-- id: '08'
-  shape: straight
-  track: 8
-- id: '02-bottom'
-  shape: t-section-bottom 
-  track: 2
-- id: '02-left'
-  shape: t-section-left 
-  track: 2
-- id: '02-right'
-  shape: t-section-right 
-  track: 2
-- id: '09-bottom'
-  shape: t-section-bottom 
-  track: 9
-- id: '09-left'
-  shape: t-section-left 
-  track: 9
-- id: '09-right'
-  shape: t-section-right 
-  track: 9
-- id: '11'
-  shape: straight
-  track: 11
+# giant dictionary of source -> target
+# naming convention: 
+# id . shape . lane segment
+# for the lane segment, look at the name in the shapes section.
 edges:
+  - source: 13.curve.outer
+    target: 20.straight.top
+  - source: 13.curve.inner
+    target: 20.straight.bottom
+  - source: 13.curve.outer
+    target: 13.curve.inner
+  - source: 20.straight.top
+    target: 04.intersection.bottom 
+  - source: 20.straight.bottom
+    target: 04.intersection.low # mirrored
+  - source: 20.straight.top
+    target: 20.straight.bottom
+  - source: 04.intersection.bottom
+    target: 21.straight.top 
+  - source: 04.intersection.high
+    target: 21.straight.bottom 
+  - source: 21.straight.top
+    target: 16.curve.outer 
+  - source: 21.straight.bottom
+    target: 16.curve.inner
+  - source: 21.straight.top
+    target: 21.straight.bottom
+  - source: 16.curve.outer
+    target: 16.curve.inner
+  - source: 01.intersection.bottom
+    target: 13.curve.outer 
+  - source: 01.intersection.high
+    target: 13.curve.inner 
+  - source: 01.intersection.high
+    target: 02.straight.top 
+  - source: 01.intersection.low
+    target: 02.straight.bottom 
+  - source: 02.straight.top
+    target: 05.intersection.low 
+  - source: 02.straight.bottom
+    target: 05.intersection.bottom
+  - source: 02.straight.top
+    target: 02.straight.bottom
+  - source: 05.intersection.low
+    target: 04.intersection.low 
+  - source: 05.intersection.high
+    target: 04.intersection.high 
+  - source: 05.intersection.high
+    target: 08.straight.top 
+  - source: 05.intersection.bottom
+    target: 08.straight.bottom 
+  - source: 08.straight.top
+    target: 02.intersection.high
+  - source: 08.straight.bottom
+    target: 02.intersection.low 
+  - source: 08.straight.top
+    target: 02.straight.bottom
+  - source: 02.intersection.high
+    target: 16.curve.inner 
+  - source: 02.intersection.bottom
+    target: 16.curve.outer 
+  - source: 09.intersection.bottom
+    target: 01.intersection.bottom 
+  - source: 09.intersection.high
+    target: 01.intersection.low 
+  - source: 09.intersection.high
+    target: 11.straight.top 
+  - source: 09.intersection.low
+    target: 11.straight.bottom 
+  - source: 11.straight.top
+    target: 06.intersection.bottom 
+  - source: 11.straight.bottom
+    target: 06.intersection.low 
+  - source: 11.straight.top
+    target: 11.straight.bottom
+  - source: 06.intersection.bottom
+    target: 10.straight.top
+  - source: 06.intersection.high
+    target: 10.straight.low 
+  - source: 10.straight.top
+    target: 12.intersection.high
+  - source: 10.straight.bottom
+    target: 12.intersection.low 
+  - source: 10.straight.top
+    target: 10.straight.bottom
+  - source: 12.intersection.high
+    target: 02.intersection.low 
+  - source: 12.intersection.bottom
+    target: 02.intersection.bottom 
+  - source: 18.intersection.bottom
+    target: 09.intersection.bottom 
+  - source: 18.intersection.high 
+    target: 09.intersection.low
+  - source: 18.intersection.high
+    target: 22.straight.top 
+  - source: 18.intersection.low
+    target: 22.straight.bottom 
+  - source: 22.straight.top 
+    target: 23.straight.top 
+  - source: 22.straight.bottom 
+    target: 23.straight.bottom 
+  - source: 23.straight.top 
+    target: 19.intersection.high 
+  - source: 23.straight.bottom
+    target: 19.intersection.low 
+  - source: 19.intersection.high
+    target: 12.intersection.low 
+  - source: 19.intersection.bottom
+    target: 12.intersection.bottom 
+  - source: 14.curve.outer 
+    target: 18.intersection.bottom 
+  - source: 14.curve.inner
+    target: 18.intersection.low 
+  - source: 14.curve.inner 
+    target: 24.straight.top 
+  - source: 14.curve.outer 
+    target: 24.straight.bottom 
+  - source: 24.straight.top
+    target: 03.intersection.low 
+  - source: 24.straight.bottom
+    target: 03.intersection.bottom 
+  - source: 03.intersection.low 
+    target: 06.intersection.low 
+  - source: 03.intersection.high
+    target: 06.intersection.high 
+  - source: 03.intersection.high
+    target: 25.straight.top 
+  - source: 03.intersection.bottom
+    target: 25.straight.bottom
+  - source: 25.straight.top 
+    target: 15.curve.inner 
+  - source: 25.straight.bottom 
+    target: 15.curve.outer 
+  - source: 15.curve.inner 
+    target: 19.intersection.low 
+  - source: 15.curve.outer
+    target: 19.intersection.bottom
