@@ -38,6 +38,7 @@ const (
 	trackYamlPath = "assets/track.yml"
 	nextStepTopic = rootTopic + "/graph/nextStep"
 	arrivedTopic  = rootTopic + "/graph/arrived"
+	fullPathTopic = rootTopic + "/graph/fullPath" // New topic for publishing the full path (Kev)
 )
 
 func ImportYaml() graph.Graph[string, string] {
@@ -80,6 +81,10 @@ type nextStepPayload struct {
 
 type arrivedPayload struct {
 	Arrived bool `json:"arrived"`
+}
+
+type fullPathPayload struct {
+	Path []string `json:"path"` // Path est une liste de nœuds (ex: "13.curve.outer") (Kev)
 }
 
 type strChannel chan string
@@ -154,6 +159,10 @@ func PathCalculation(client mqtt.Client, g graph.Graph[string, string]) {
 		if err != nil {
 			log.Fatal("Something went horribly wrong.")
 		}
+
+		// --- NOUVEAU : Publier le chemin complet pour la visualisation --- (Kev)
+		pathData, _ := json.Marshal(fullPathPayload{Path: p})
+		client.Publish(fullPathTopic, 1, false, pathData)
 
 		if len(p) <= 1 {
 			data, _ := json.Marshal(arrivedPayload{true})

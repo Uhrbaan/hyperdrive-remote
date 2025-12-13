@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"image/color"
+	"strconv"
+	"strings"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -26,6 +28,7 @@ var gridSections = [5][5]int{
 const (
 	vehicleTargetTopic = "/hobHq10yb9dKwxrdfhtT/vehicle/target"
 	vehicleIDTopic     = "/hobHq10yb9dKwxrdfhtT/vehicle/id"
+	// fullPathTopic      = "/hobHq10yb9dKwxrdfhtT/graph/fullPath" // Topic to receive the full path (Kev)
 )
 
 type tilePayload struct {
@@ -34,6 +37,21 @@ type tilePayload struct {
 
 type vehicleIdPayload struct {
 	ID string `json:"id"`
+}
+
+// NOUVEAU : Structure pour recevoir le chemin complet
+// type fullPathPayload struct {
+// 	Path []string `json:"path"` // Path est une liste de nœuds (ex: "13.curve.outer")
+// }
+
+// NOUVEAU : Fonction utilitaire pour extraire l'ID de tuile à partir du nom du nœud
+func getTileIDFromNode(node string) (int, error) {
+	parts := strings.Split(node, ".")
+	if len(parts) < 1 {
+		return 0, fmt.Errorf("invalid node format: %s", node)
+	}
+	// L'ID de tuile est les deux premiers caractères (ex: "13")
+	return strconv.Atoi(parts[0])
 }
 
 func UI(client mqtt.Client) {
@@ -46,6 +64,11 @@ func UI(client mqtt.Client) {
 
 	absolute := map[int]*fyne.Animation{} // Used to store rectangle references according to the ID
 	preditction := map[int]*fyne.Animation{}
+
+	// --- NOUVEAU : Map pour la visualisation du chemin (Bleu) ---
+	pathVisualization := map[int]*canvas.Rectangle{}
+	var currentPathTiles []int // Pour garder une trace des tuiles bleues
+
 	cells := []fyne.CanvasObject{}
 	var previousTarget *canvas.Rectangle = nil
 	for _, row := range gridSections {
@@ -69,6 +92,15 @@ func UI(client mqtt.Client) {
 				canvas.Refresh(rect)
 			})
 
+			// --- NOUVEAU : Rectangle Bleu pour le Chemin ---
+			rect3 := canvas.NewRectangle(color.RGBA{0, 0, 0, 0})
+			pathColor := color.RGBA{0, 0, 255, 128} // Bleu semi-transparent
+			rect3.FillColor = pathColor
+			rect3.Hide()
+
+			pathVisualization[col] = rect3
+			// ---------------------------------------------
+
 			absolute[col] = animation
 			preditction[col] = animation2
 
@@ -87,9 +119,9 @@ func UI(client mqtt.Client) {
 					}
 					client.Publish(vehicleTargetTopic, 1, false, payload)
 				})
-				cells = append(cells, container.New(layout.NewStackLayout(), button, image, rect, rect2, targetRect))
+				cells = append(cells, container.New(layout.NewStackLayout(), button, image, rect, rect2, rect3, targetRect))
 			} else {
-				cells = append(cells, container.New(layout.NewStackLayout(), image, rect, rect2, targetRect))
+				cells = append(cells, container.New(layout.NewStackLayout(), image, rect, rect2, rect3, targetRect))
 			}
 
 		}
@@ -118,6 +150,48 @@ func UI(client mqtt.Client) {
 
 		if _, ok := preditction[data.ID]; ok {
 			preditction[data.ID].Start()
+		}
+	})
+
+	// --- NOUVEAU : Abonnement pour le Chemin Complet (Bleu) ---
+	client.Subscribe(fullPathTopic, 1, func(c mqtt.Client, m mqtt.Message) {
+		fmt.Println("Received a full path for visualization.")
+		var data fullPathPayload
+		err := json.Unmarshal(m.Payload(), &data)
+		if err != nil {
+			fmt.Printf("Error unmarshalling full path payload: %v\n", err)
+			return
+		}
+
+		// 1. Cacher le chemin précédent
+		for _, tileID := range currentPathTiles {
+			if rect, ok := pathVisualization[tileID]; ok {
+				rect.Hide()
+			}
+		}
+		currentPathTiles = nil // Réinitialiser la liste
+
+		// 2. Afficher le nouveau chemin
+		newPathTiles := make(map[int]bool) // Utiliser une map pour dédoublonner les tuiles (un chemin peut passer plusieurs fois sur un ID de tuile)
+		for _, node := range data.Path {
+			tileID, err := getTileIDFromNode(node)
+			if err != nil {
+				fmt.Printf("Warning: Could not get tile ID from node '%s': %v\n", node, err)
+				continue
+			}
+
+			// Si la tuile est dans notre grille
+			if _, ok := pathVisualization[tileID]; ok {
+				newPathTiles[tileID] = true
+			}
+		}
+
+		// 3. Mettre à jour l'UI pour les nouvelles tuiles du chemin
+		for tileID := range newPathTiles {
+			if rect, ok := pathVisualization[tileID]; ok {
+				rect.Show()
+				currentPathTiles = append(currentPathTiles, tileID)
+			}
 		}
 	})
 
