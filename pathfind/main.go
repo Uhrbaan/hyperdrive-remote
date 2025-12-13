@@ -30,12 +30,20 @@ func main() {
 	}
 	log.Println("Connected to mosquitto broker on", rpiIp+":"+strconv.Itoa(mqttPort))
 
+	// We need a second client since the same client can't listen to the same topic twice.
+	opts.SetClientID(uuid.NewString())
+	vehicleClient := mqtt.NewClient(opts)
+	if token := vehicleClient.Connect(); token.Wait() && token.Error() != nil {
+		log.Fatal("Could not establish connection with MQTT server: ", token.Error())
+	}
+	log.Println("Connected to mosquitto broker on", rpiIp+":"+strconv.Itoa(mqttPort))
+
 	g := path.ImportYaml()
 	p, _ := graph.ShortestPath(g, "13.curve.outer", "03.intersection.high")
 	fmt.Println(p)
 
-	go path.VehicleTracking(client, g)
 	go path.PathCalculation(client, g)
+	go path.VehicleTracking(vehicleClient, g)
 	go lanechange.InstructionProcess(client)
 
 	path.UI(client)

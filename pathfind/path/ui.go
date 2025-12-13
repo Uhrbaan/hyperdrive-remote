@@ -91,7 +91,7 @@ func UI(client mqtt.Client) {
 		}
 	}
 
-	client.Subscribe(vehiclePositionTopic, 1, func(c mqtt.Client, m mqtt.Message) {
+	client.Subscribe(vehicleAbsolutePositionTopic, 1, func(c mqtt.Client, m mqtt.Message) {
 		fmt.Println("Received a received an absolute position.")
 		var data tilePayload
 		err := json.Unmarshal(m.Payload(), &data)

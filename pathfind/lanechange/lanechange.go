@@ -6,7 +6,7 @@ import (
 	"hyperdrive/remote/hyperdrive"
 	"hyperdrive/remote/pathfind/util"
 	"log"
-	"slices"
+	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
@@ -19,8 +19,8 @@ const (
 	AnkiVehicleIntent = "Anki/Vehicles/U/%s/I"
 
 	LaneDirValue      = 68
-	AccelerationValue = 300
-	VelocityValue     = 300
+	AccelerationValue = 200
+	VelocityValue     = 200
 	NegVelocityValue  = -100
 )
 
@@ -131,39 +131,40 @@ func subscribeLaneChange(client mqtt.Client) {
 }
 
 func connectEverything(client mqtt.Client, id string) {
-	stepCh := make(chan struct{})
-	baseAnkiSub := "Anki/Vehicles/U/%s/S/DIT/%s"
-	client.Subscribe(fmt.Sprintf(baseAnkiSub, id, "connectSubscription"), 1, func(c mqtt.Client, m mqtt.Message) {
-		var data map[string]any
-		json.Unmarshal(m.Payload(), &data)
-		if data["value"] != nil && slices.Contains(data["value"].([]string), connectTopic) {
-			stepCh <- struct{}{}
-		}
-	})
+	// stepCh := make(chan struct{})
+	// baseAnkiSub := "Anki/Vehicles/U/%s/S/DIT/%s"
+	// client.Subscribe(fmt.Sprintf(baseAnkiSub, id, "connectSubscription"), 1, func(c mqtt.Client, m mqtt.Message) {
+	// 	var data map[string]any
+	// 	json.Unmarshal(m.Payload(), &data)
+	// 	if data["value"] != nil && slices.Contains(data["value"].([]string), connectTopic) {
+	// 		stepCh <- struct{}{}
+	// 	}
+	// })
 	hyperdrive.SyncSubscription(client, "connectSubscription", fmt.Sprintf(AnkiVehicleIntent, id), connectTopic, true)
-	<-stepCh // wait for the subscription to go through
+	// <-stepCh // wait for the subscription to go through
 
-	client.Subscribe(fmt.Sprintf(baseAnkiSub, id, "speedSubscription"), 1, func(c mqtt.Client, m mqtt.Message) {
-		var data map[string]any
-		json.Unmarshal(m.Payload(), &data)
-		if slices.Contains(data["value"].([]string), speedTopic) {
-			stepCh <- struct{}{}
-		}
-	})
+	// client.Subscribe(fmt.Sprintf(baseAnkiSub, id, "speedSubscription"), 1, func(c mqtt.Client, m mqtt.Message) {
+	// 	var data map[string]any
+	// 	json.Unmarshal(m.Payload(), &data)
+	// 	if slices.Contains(data["value"].([]string), speedTopic) {
+	// 		stepCh <- struct{}{}
+	// 	}
+	// })
 	hyperdrive.SyncSubscription(client, "speedSubscription", fmt.Sprintf(AnkiVehicleIntent, id), speedTopic, true)
-	<-stepCh
+	// <-stepCh
 
-	client.Subscribe(fmt.Sprintf(baseAnkiSub, id, "laneSubscription"), 1, func(c mqtt.Client, m mqtt.Message) {
-		var data map[string]any
-		json.Unmarshal(m.Payload(), &data)
-		if slices.Contains(data["value"].([]string), laneTopic) {
-			stepCh <- struct{}{}
-		}
-	})
+	// client.Subscribe(fmt.Sprintf(baseAnkiSub, id, "laneSubscription"), 1, func(c mqtt.Client, m mqtt.Message) {
+	// 	var data map[string]any
+	// 	json.Unmarshal(m.Payload(), &data)
+	// 	if slices.Contains(data["value"].([]string), laneTopic) {
+	// 		stepCh <- struct{}{}
+	// 	}
+	// })
 	hyperdrive.SyncSubscription(client, "laneSubscription", fmt.Sprintf(AnkiVehicleIntent, id), connectTopic, true)
-	<-stepCh
+	// <-stepCh
 
-	log.Println("")
+	// Subscriptions are unreliable and don't work. Waiting a second instead.
+	time.Sleep(1 * time.Second)
 }
 
 func InstructionProcess(client mqtt.Client) {
@@ -176,6 +177,7 @@ func InstructionProcess(client mqtt.Client) {
 	// 3. Connect to the vehicle and publish initial speed instruction
 	data, _ := json.Marshal(hyperdrive.ConnectPayload{Value: true})
 	client.Publish(connectTopic, 1, false, data)
+	time.Sleep(2 * time.Second)
 	speed(client, VelocityValue, AccelerationValue)
 
 	subscribeLaneChange(client)

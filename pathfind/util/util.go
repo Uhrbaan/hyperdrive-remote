@@ -18,13 +18,12 @@ type VehicleIdPayload struct {
 
 func WaitForVehicleID(client mqtt.Client) string {
 	ch := make(chan string)
-	token := client.Subscribe(VehicleIDTopic, 1, func(c mqtt.Client, m mqtt.Message) {
+	client.Subscribe(VehicleIDTopic, 1, func(c mqtt.Client, m mqtt.Message) {
 		var data VehicleIdPayload
 		if err := json.Unmarshal(m.Payload(), &data); err == nil {
 			ch <- data.ID
 		}
 	})
-	token.Wait()
 
 	defer client.Unsubscribe(VehicleIDTopic)
 	return <-ch

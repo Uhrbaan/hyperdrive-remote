@@ -17,12 +17,13 @@ import (
 )
 
 const (
-	vehicleTrackTopicFormat = "Anki/Vehicles/U/%s/E/track"
-	vehiclePositionTopic    = util.RootTopic + "/vehicle/position"
-	vehiclePredictionTopic  = util.RootTopic + "/vehicle/prediction"
+	vehicleTrackTopicFormat      = "Anki/Vehicles/U/%s/E/track"
+	vehicleAbsolutePositionTopic = util.RootTopic + "/vehicle/absolute-position"
+	vehiclePredictionTopic       = util.RootTopic + "/vehicle/prediction"
+	vehiclePositionTopic         = util.RootTopic + "/vehicle/position"
 )
 
-var trackTypes = map[int]string{
+var TrackTypes = map[int]string{
 	13: "curve", 16: "curve", 15: "curve", 14: "curve",
 	4: "intersection", 1: "intersection", 5: "intersection", 2: "intersection",
 	9: "intersection", 6: "intersection", 12: "intersection", 18: "intersection", 19: "intersection", 3: "intersection",
@@ -42,7 +43,7 @@ type positionPayload struct {
 }
 
 func getTrackShape(trackID int) string {
-	if shape, exists := trackTypes[trackID]; exists {
+	if shape, exists := TrackTypes[trackID]; exists {
 		return shape
 	}
 	return "straight"
@@ -53,7 +54,12 @@ func calculatePositionNode(trackID, lane int) string {
 	var suffix string
 
 	switch shape {
-	case "curve", "straight":
+	case "curve":
+		suffix = "outer"
+		if lane < 9 {
+			suffix = "inner"
+		}
+	case "straight":
 		suffix = "top"
 		if lane < 9 {
 			suffix = "bottom"
@@ -110,6 +116,7 @@ func VehicleTracking(client mqtt.Client, trackGraph graph.Graph[string, string])
 			log.Printf("Error unmarshalling next step: %v", err)
 			return
 		}
+		log.Println("[Vehicle] The next step is", data.NextStep)
 		nextStepCh <- data.NextStep
 	})
 
@@ -134,8 +141,6 @@ func VehicleTracking(client mqtt.Client, trackGraph graph.Graph[string, string])
 	}
 
 	for {
-		var currentPositionNode string
-		stateUpdated := false
 
 		select {
 		case trackData := <-trackCh: // Getting data from vehicle
@@ -144,14 +149,14 @@ func VehicleTracking(client mqtt.Client, trackGraph graph.Graph[string, string])
 				continue
 			}
 
-			currentPositionNode = calculatePositionNode(trackData.Value.TrackID, trackData.Value.TrackLocation)
+			currentPositionNode := calculatePositionNode(trackData.Value.TrackID, trackData.Value.TrackLocation)
 			updateHistory(currentPositionNode)
 
 			fmt.Printf("Track Update. History: %v\n", history)
 
-			util.SendJSON(client, vehiclePositionTopic, tilePayload{ID: trackData.Value.TrackID})
+			util.SendJSON(client, vehicleAbsolutePositionTopic, tilePayload{ID: trackData.Value.TrackID})
+			util.SendJSON(client, vehiclePositionTopic, positionPayload{history[len(history)-1]})
 			timer.Reset(predictionTimeout)
-			stateUpdated = true
 
 		case <-timer.C: // prediction on timeout
 			if len(history) == 0 {
@@ -171,34 +176,40 @@ func VehicleTracking(client mqtt.Client, trackGraph graph.Graph[string, string])
 			predictedID, _ := strconv.Atoi(predictedNode[:2])
 
 			fmt.Printf("Predicted: %s. New History: %v\n", predictedNode, history)
-			util.SendJSON(client, vehiclePredictionTopic, tilePayload{ID: predictedID})
 
 			updateHistory(predictedNode)
-			currentPositionNode = predictedNode
-			stateUpdated = true
+			util.SendJSON(client, vehiclePredictionTopic, tilePayload{ID: predictedID})
+			util.SendJSON(client, vehiclePositionTopic, positionPayload{history[len(history)-1]})
 
 		case nextStep := <-nextStepCh:
-			// if ids are the same and changing from bottom -> top or the opposite
-			if nextStep[:2] != currentPositionNode[:2] {
+			// fmt.Println("[Vehicle] nextStep:", nextStep, "currentPositionNode:", history[len(history)-1])
+			currentNode := history[len(history)-1]
+			if nextStep == "" || history[len(history)-1] == "" {
 				continue
 			}
 
 			instruction := lanechange.LaneChangeMessage{}
-			// turn right
-			if strings.Contains(nextStep, "top") && strings.Contains(currentPositionNode, "bottom") {
-				instruction.LaneChange = "rigth"
-			} else {
-				instruction.LaneChange = "left"
+			// only turn on straight lines
+			if nextStep[:2] == currentNode[:2] {
+				// turn right
+				if strings.Contains(nextStep, "top") && strings.Contains(currentNode, "bottom") {
+					instruction.LaneChange = "right"
+				} else if strings.Contains(currentNode, "top") && strings.Contains(nextStep, "bottom") {
+					instruction.LaneChange = "left"
+				} else {
+					instruction.LaneChange = ""
+				}
 			}
 
-			// TODO: implement calculation to know which direction we should drive in.
+			// if slices.Contains(history, nextStep) {
+			// 	// if the next step is in the history, it means we have to drive back.
+			// 	instruction.Forward = false
+			// } else {
 			instruction.Forward = true
+			// }
 
 			util.SendJSON(client, lanechange.InstructionTopic, instruction)
-		}
-
-		if stateUpdated && currentPositionNode != "" {
-			util.SendJSON(client, vehiclePositionTopic, positionPayload{ID: currentPositionNode})
+			log.Println("[Vehicle] To go to next step, going:", instruction)
 		}
 	}
 }
