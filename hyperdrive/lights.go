@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	LightsTopic = "RemoteControl/U/E/vehicles/%s/lights"
+	LightsTopic = "RemoteControl" + UserSuffix + "/U/E/vehicles/%s/lights"
 )
 
 type LightEffect struct {

@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	LaneTopic       = "RemoteControl/U/E/vehicles/%s/lane"
-	CancelLaneTopic = "RemoteControl/U/E/vehicles/%s/cancelLane"
+	LaneTopic       = "RemoteControl" + UserSuffix + "/U/E/vehicles/%s/lane"
+	CancelLaneTopic = "RemoteControl" + UserSuffix + "/U/E/vehicles/%s/cancelLane"
 )
 
 // LanePayload correspond à la structure LaneIntentStatus

@@ -26,8 +26,10 @@ var gridSections = [5][5]int{
 }
 
 const (
-	vehicleTargetTopic = "/hobHq10yb9dKwxrdfhtT/vehicle/target"
-	vehicleIDTopic     = "/hobHq10yb9dKwxrdfhtT/vehicle/id"
+	// vehicleTargetTopic = "/hobHq10yb9dKwxrdfhtT/vehicle/target"
+	// vehicleIDTopic     = "/hobHq10yb9dKwxrdfhtT/vehicle/id"
+	vehicleTargetTopic = rootTopic + "/vehicle/target"
+	vehicleIDTopic     = rootTopic + "/vehicle/id"
 	// fullPathTopic      = "/hobHq10yb9dKwxrdfhtT/graph/fullPath" // Topic to receive the full path (Kev)
 )
 

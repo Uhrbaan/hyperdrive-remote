@@ -3,6 +3,7 @@ package path
 import (
 	"encoding/json"
 	"fmt"
+	"hyperdrive/remote/hyperdrive"
 	"log"
 	"slices"
 	"sort"
@@ -15,7 +16,7 @@ import (
 )
 
 const (
-	rootTopic               = "/hobHq10yb9dKwxrdfhtT"
+	rootTopic               = "/hobHq10yb9dKwxrdfhtT" + hyperdrive.UserSuffix
 	vehicleTrackTopicFormat = "Anki/Vehicles/U/%s/E/track"
 	vehiclePositionTopic    = rootTopic + "/vehicle/position"
 	vehiclePredictionTopic  = rootTopic + "/vehicle/prediction"

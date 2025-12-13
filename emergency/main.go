@@ -20,8 +20,8 @@ import (
 )
 
 const (
-	stopTopic        = "Emergency/U/E/stop"
-	mediateRootTopic = "Emergency/U/E/mediate/"
+	stopTopic        = "Emergency" + hyperdrive.UserSuffix + "/U/E/stop"
+	mediateRootTopic = "Emergency" + hyperdrive.UserSuffix + "/U/E/mediate/"
 )
 
 // Configuration des variables pour le broker MQTT, l'ID client et le QoS.

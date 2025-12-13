@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	SpeedTopic = "RemoteControl/U/E/vehicles/%s/speed"
+	SpeedTopic = "RemoteControl" + UserSuffix + "/U/E/vehicles/%s/speed"
 )
 
 type SpeedPayload struct {

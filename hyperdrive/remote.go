@@ -17,6 +17,9 @@ type Remote struct {
 	Client mqtt.Client
 }
 
+// Global suffix for user-specific topics
+const UserSuffix = "_KEV"
+
 // Data definitions of hyperdrive objects
 
 type Intent struct {

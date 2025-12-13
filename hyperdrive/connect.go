@@ -13,7 +13,7 @@ type ConnectPayload struct {
 }
 
 const (
-	ConnectTopic = "RemoteControl/U/E/vehicles/%s/connect"
+	ConnectTopic = "RemoteControl" + UserSuffix + "/U/E/vehicles/%s/connect"
 )
 
 // Send a connect payload to list of targets

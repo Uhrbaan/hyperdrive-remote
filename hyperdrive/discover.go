@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	DiscoverTopic = "RemoteControl/U/E/hosts/discover"
+	DiscoverTopic = "RemoteControl" + UserSuffix + "/U/E/hosts/discover"
 )
 
 type DiscoverPayload struct {
