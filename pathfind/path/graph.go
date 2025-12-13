@@ -3,6 +3,7 @@ package path
 import (
 	"encoding/json"
 	"fmt"
+	"hyperdrive/remote/pathfind/util"
 	"log"
 	"os"
 
@@ -36,8 +37,8 @@ type LaneSegment struct {
 
 const (
 	trackYamlPath = "assets/track.yml"
-	nextStepTopic = rootTopic + "/graph/nextStep"
-	arrivedTopic  = rootTopic + "/graph/arrived"
+	nextStepTopic = util.RootTopic + "/graph/nextStep"
+	arrivedTopic  = util.RootTopic + "/graph/arrived"
 )
 
 func ImportYaml() graph.Graph[string, string] {
@@ -91,6 +92,7 @@ func (ch strChannel) targetTopicHandler(c mqtt.Client, m mqtt.Message) {
 		log.Println("Could not unmarshal message:", string(m.Payload()))
 		return
 	}
+	log.Println("[targetTopicHandler] Got a new target:", data.ID)
 
 	// sanitize: we only get a number, and we need to map it to a string with the correct suffix if necessary.
 	n := data.ID
@@ -116,6 +118,7 @@ func (ch strChannel) positionTopicHandler(c mqtt.Client, m mqtt.Message) {
 		log.Println("Could not read message:", string(m.Payload()))
 		return
 	}
+	log.Println("[positionTopicHandler] Got new position:", data.ID)
 
 	if data.ID != "" {
 		ch <- data.ID

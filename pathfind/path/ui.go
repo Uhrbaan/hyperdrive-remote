@@ -3,6 +3,7 @@ package path
 import (
 	"encoding/json"
 	"fmt"
+	"hyperdrive/remote/pathfind/util"
 	"image/color"
 	"time"
 
@@ -25,15 +26,10 @@ var gridSections = [5][5]int{
 
 const (
 	vehicleTargetTopic = "/hobHq10yb9dKwxrdfhtT/vehicle/target"
-	vehicleIDTopic     = "/hobHq10yb9dKwxrdfhtT/vehicle/id"
 )
 
 type tilePayload struct {
 	ID int `json:"id"`
-}
-
-type vehicleIdPayload struct {
-	ID string `json:"id"`
 }
 
 func UI(client mqtt.Client) {
@@ -132,8 +128,8 @@ func UI(client mqtt.Client) {
 			},
 		},
 		OnSubmit: func() {
-			payload, _ := json.Marshal(vehicleIdPayload{vehicleIdEntry.Text})
-			client.Publish(vehicleIDTopic, 1, false, payload)
+			payload, _ := json.Marshal(util.VehicleIdPayload{vehicleIdEntry.Text})
+			client.Publish(util.VehicleIDTopic, 1, false, payload)
 			w.SetContent(grid)
 		},
 	}

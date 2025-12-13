@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"hyperdrive/remote/pathfind/lanechange"
 	"hyperdrive/remote/pathfind/path"
 	"log"
 	"strconv"
@@ -35,6 +36,7 @@ func main() {
 
 	go path.VehicleTracking(client, g)
 	go path.PathCalculation(client, g)
+	go lanechange.InstructionProcess(client)
 
 	path.UI(client)
 }
