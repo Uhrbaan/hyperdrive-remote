@@ -4,7 +4,9 @@ go 1.24.4
 
 require (
 	fyne.io/fyne/v2 v2.7.0
+	github.com/dominikbraun/graph v0.23.0
 	github.com/eclipse/paho.mqtt.golang v1.5.1
+	github.com/goccy/go-yaml v1.19.0
 	github.com/google/uuid v1.6.0
 )
 

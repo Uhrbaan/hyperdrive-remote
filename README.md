@@ -1,18 +1,26 @@
-# 
-> **Steering**: One gives a directive $D$ which directly has an effect on the result. 
->
-> **Controlling**: Onve gives a directive $D$, which is more of a _goal_. The system then reads the current stat of the system and adapts its own state to achieve the directive.
+# Hyperdrive remote control 
+This repository implements the last mandatory project developped in the Process Control course of the university of Fribourg. 
 
-## Emergency 
-```yaml
-type: emergency
-payload:
-    value: true | false
+## Running 
+To install the project, first install go, clone the repository, and then run either `main.go` to run the *RemoteControl* app, or `emergency/main.go` to run the *Emergency* app.
 
-type: mediate 
-payload: 
-    topic: Remote/#
-    value: true | false
+```sh 
+# install go 
+sudo apt install golang-go # ubuntu
+sudo dnf install golang # fedora
+winget install GoLang.Go # windows
+brew install go # macos
+
+# clone the repository
+git clone https://github.com/Uhrbaan/hyperdrive-remote.git
+cd hyperdrive-remote
+
+# run the apps
+go run main.go # RemoteControl app 
+go run emergency/main.go # Emergency app
 ```
 
-Emergency is a _conditional mediator_: it relays the values of the remote controller identically, unless the emergency is sest to `true`.
+The first time you run an app, it will install all dependencies which might take some time.
+If you encounter problems during the installation of `fyne` (a dependency used to create the graphical applications), please refer to <https://docs.fyne.io/started/quick/>.
+
+> Please note that for the apps to work, both must be running at the same time, and you *must* me connected to the hyperdrive wifi. Also make sure that the topics provided at the app startup are correct, although they should be if you haven't changed the default setup.
