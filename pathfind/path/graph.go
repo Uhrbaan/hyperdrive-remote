@@ -96,13 +96,20 @@ func (ch strChannel) targetTopicHandler(c mqtt.Client, m mqtt.Message) {
 		log.Println("Could not unmarshal message:", string(m.Payload()))
 		return
 	}
+	log.Println("[targetTopicHandler] Got a new target:", data.ID)
 
 	// sanitize: we only get a number, and we need to map it to a string with the correct suffix if necessary.
 	n := data.ID
-	suffix := ""
-	if _, exists := trackTypes[n]; exists {
-		// if the selected element is an intersection, add a -c suffix (the car shall stop on the straight path).
-		suffix = "-c"
+	shape := getTrackShape(n)
+	var suffix string
+
+	switch shape {
+	case "curve":
+		suffix = "outer"
+	case "straight":
+		suffix = "top"
+	case "intersection":
+		suffix = "bottom"
 	}
 
 	if n == 0 || n == 17 {
@@ -111,7 +118,7 @@ func (ch strChannel) targetTopicHandler(c mqtt.Client, m mqtt.Message) {
 		n = 15
 	}
 
-	ch <- fmt.Sprintf("%02d%s", n, suffix)
+	ch <- fmt.Sprintf("%02d.%s.%s", n, shape, suffix)
 }
 
 func (ch strChannel) positionTopicHandler(c mqtt.Client, m mqtt.Message) {
@@ -121,6 +128,7 @@ func (ch strChannel) positionTopicHandler(c mqtt.Client, m mqtt.Message) {
 		log.Println("Could not read message:", string(m.Payload()))
 		return
 	}
+	log.Println("[positionTopicHandler] Got new position:", data.ID)
 
 	if data.ID != "" {
 		ch <- data.ID
@@ -129,10 +137,14 @@ func (ch strChannel) positionTopicHandler(c mqtt.Client, m mqtt.Message) {
 
 func PathCalculation(client mqtt.Client, g graph.Graph[string, string]) {
 	targetUpdate := make(chan string)
-	client.Subscribe(vehicleTargetTopic, 1, strChannel(targetUpdate).targetTopicHandler)
+	if token := client.Subscribe(vehicleTargetTopic, 1, strChannel(targetUpdate).targetTopicHandler); token.Wait() && token.Error() != nil {
+		log.Fatal("Could not subscribe to", vehicleTargetTopic, "because of:", token.Error())
+	}
 
 	positionUpdate := make(chan string)
-	client.Subscribe(vehiclePositionTopic, 1, strChannel(positionUpdate).positionTopicHandler)
+	if token := client.Subscribe(vehiclePositionTopic, 1, strChannel(positionUpdate).positionTopicHandler); token.Wait() && token.Error() != nil {
+		log.Fatal("Could not subscribe to", vehiclePositionTopic, "because of:", token.Error())
+	}
 
 	var (
 		target, position string
@@ -144,11 +156,13 @@ func PathCalculation(client mqtt.Client, g graph.Graph[string, string]) {
 			if !ok {
 				continue
 			}
+			log.Println("[Graph] Got a new target:", target)
 
 		case position, ok = <-positionUpdate:
 			if !ok {
 				continue
 			}
+			log.Println("[Graph] Got new position:", position)
 		}
 
 		if target == "" || position == "" {
@@ -157,8 +171,11 @@ func PathCalculation(client mqtt.Client, g graph.Graph[string, string]) {
 
 		p, err := graph.ShortestPath(g, position, target)
 		if err != nil {
-			log.Fatal("Something went horribly wrong.")
+			log.Println("[Graph] Could not compute shortest path from", position, "to", target)
+			continue
 		}
+
+		log.Println("[Graph] The shortest path from", position, "to", target, "is", p)
 
 		// --- NOUVEAU : Publier le chemin complet pour la visualisation --- (Kev)
 		pathData, _ := json.Marshal(fullPathPayload{Path: p})
@@ -170,6 +187,7 @@ func PathCalculation(client mqtt.Client, g graph.Graph[string, string]) {
 		} else {
 			nextStep := p[1]
 			data, _ := json.Marshal(nextStepPayload{nextStep})
+			log.Println("[Graph] Publishing next step as being:", string(data))
 			client.Publish(nextStepTopic, 1, false, data)
 		}
 	}

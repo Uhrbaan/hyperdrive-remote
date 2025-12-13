@@ -3,6 +3,7 @@ package path
 import (
 	"encoding/json"
 	"fmt"
+	"hyperdrive/remote/pathfind/util"
 	"image/color"
 	"strconv"
 	"strings"
@@ -129,7 +130,7 @@ func UI(client mqtt.Client) {
 		}
 	}
 
-	client.Subscribe(vehiclePositionTopic, 1, func(c mqtt.Client, m mqtt.Message) {
+	client.Subscribe(vehicleAbsolutePositionTopic, 1, func(c mqtt.Client, m mqtt.Message) {
 		fmt.Println("Received a received an absolute position.")
 		var data tilePayload
 		err := json.Unmarshal(m.Payload(), &data)
@@ -208,8 +209,8 @@ func UI(client mqtt.Client) {
 			},
 		},
 		OnSubmit: func() {
-			payload, _ := json.Marshal(vehicleIdPayload{vehicleIdEntry.Text})
-			client.Publish(vehicleIDTopic, 1, false, payload)
+			payload, _ := json.Marshal(util.VehicleIdPayload{vehicleIdEntry.Text})
+			client.Publish(util.VehicleIDTopic, 1, false, payload)
 			w.SetContent(grid)
 		},
 	}

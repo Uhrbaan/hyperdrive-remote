@@ -3,18 +3,24 @@ package lanechange
 import (
 	"encoding/json"
 	"fmt"
+	"hyperdrive/remote/hyperdrive"
+	"hyperdrive/remote/pathfind/util"
 	"log"
+	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 const (
-	LaneTopic         = "Anki/Vehicles/%s/S/intended/lane"
-	SpeedTopic        = "Anki/Vehicles/%s/S/intended/speed"
-	LaneChangeTopic   = "PlaceHolder/S/LaneChangeTopic"
+	laneTopic         = util.RootTopic + "/lane"
+	speedTopic        = util.RootTopic + "/speed"
+	connectTopic      = util.RootTopic + "/connect"
+	InstructionTopic  = util.RootTopic + "/instruction"
+	AnkiVehicleIntent = "Anki/Vehicles/U/%s/I"
+
 	LaneDirValue      = 68
-	AccelerationValue = 300
-	VelocityValue     = 300
+	AccelerationValue = 200
+	VelocityValue     = 200
 	NegVelocityValue  = -100
 )
 
@@ -31,7 +37,6 @@ type SpeedPayload struct {
 }
 
 type LaneChangeMessage struct {
-	ID         string `json:"ID"`
 	LaneChange string `json:"lane_change"`
 	Forward    bool   `json:"forward"`
 }
@@ -42,9 +47,7 @@ func lane_change(
 	acceleration float32,
 	offsetFromCenter float32,
 	offset float32,
-	target string,
 ) error {
-
 	payload, err := json.Marshal(LanePayload{
 		Velocity:         velocity,
 		Acceleration:     acceleration,
@@ -55,7 +58,6 @@ func lane_change(
 		return err
 	}
 
-	laneTopic := fmt.Sprintf(LaneTopic, target)
 	log.Println("[Lane] Sending", string(payload), "on", laneTopic)
 
 	if token := client.Publish(laneTopic, 1, false, payload); token.Wait() && token.Error() != nil {
@@ -64,7 +66,7 @@ func lane_change(
 	return nil
 }
 
-func speed(client mqtt.Client, velocity float32, acceleration float32, target string) error {
+func speed(client mqtt.Client, velocity float32, acceleration float32) error {
 	payload, err := json.Marshal(SpeedPayload{
 		Velocity:     velocity,
 		Acceleration: acceleration,
@@ -73,7 +75,6 @@ func speed(client mqtt.Client, velocity float32, acceleration float32, target st
 		return err
 	}
 
-	speedTopic := fmt.Sprintf(SpeedTopic, target)
 	log.Println("[Speed] Sending", string(payload), "on", speedTopic)
 
 	if token := client.Publish(speedTopic, 1, false, payload); token.Wait() && token.Error() != nil {
@@ -89,7 +90,6 @@ func laneChangeHandler(client mqtt.Client, msg mqtt.Message) {
 		return
 	}
 
-	log.Println("[LaneChange] Received message from ID:", lcMsg.ID)
 	log.Println("[LaneChange] Lane change:", lcMsg.LaneChange)
 	log.Println("[LaneChange] Forward:", lcMsg.Forward)
 
@@ -97,9 +97,10 @@ func laneChangeHandler(client mqtt.Client, msg mqtt.Message) {
 	if lcMsg.Forward {
 		offsetFromCenter := 0
 
-		if lcMsg.LaneChange == "left" {
+		switch lcMsg.LaneChange {
+		case "left":
 			offsetFromCenter = -LaneDirValue
-		} else if lcMsg.LaneChange == "right" {
+		case "right":
 			offsetFromCenter = LaneDirValue
 		}
 
@@ -109,7 +110,6 @@ func laneChangeHandler(client mqtt.Client, msg mqtt.Message) {
 			AccelerationValue,
 			float32(offsetFromCenter),
 			0,
-			lcMsg.ID,
 		); err != nil {
 			log.Println("[Lane] Error sending lane command:", err)
 		}
@@ -117,17 +117,72 @@ func laneChangeHandler(client mqtt.Client, msg mqtt.Message) {
 
 	// Reverse / stop
 	if !lcMsg.Forward {
-		if err := speed(client, NegVelocityValue, AccelerationValue, lcMsg.ID); err != nil {
+		if err := speed(client, NegVelocityValue, AccelerationValue); err != nil {
 			log.Println("[Speed] Error sending speed command:", err)
 		}
 	}
 }
 
 func subscribeLaneChange(client mqtt.Client) {
-	if token := client.Subscribe(LaneChangeTopic, 1, laneChangeHandler); token.Wait() && token.Error() != nil {
+	if token := client.Subscribe(InstructionTopic, 1, laneChangeHandler); token.Wait() && token.Error() != nil {
 		log.Fatal("[LaneChange] Subscribe error:", token.Error())
 	}
-	log.Println("[LaneChange] Subscribed to topic:", LaneChangeTopic)
+	log.Println("[LaneChange] Subscribed to topic:", InstructionTopic)
+}
+
+func connectEverything(client mqtt.Client, id string) {
+	// stepCh := make(chan struct{})
+	// baseAnkiSub := "Anki/Vehicles/U/%s/S/DIT/%s"
+	// client.Subscribe(fmt.Sprintf(baseAnkiSub, id, "connectSubscription"), 1, func(c mqtt.Client, m mqtt.Message) {
+	// 	var data map[string]any
+	// 	json.Unmarshal(m.Payload(), &data)
+	// 	if data["value"] != nil && slices.Contains(data["value"].([]string), connectTopic) {
+	// 		stepCh <- struct{}{}
+	// 	}
+	// })
+	hyperdrive.SyncSubscription(client, "connectSubscription", fmt.Sprintf(AnkiVehicleIntent, id), connectTopic, true)
+	// <-stepCh // wait for the subscription to go through
+
+	// client.Subscribe(fmt.Sprintf(baseAnkiSub, id, "speedSubscription"), 1, func(c mqtt.Client, m mqtt.Message) {
+	// 	var data map[string]any
+	// 	json.Unmarshal(m.Payload(), &data)
+	// 	if slices.Contains(data["value"].([]string), speedTopic) {
+	// 		stepCh <- struct{}{}
+	// 	}
+	// })
+	hyperdrive.SyncSubscription(client, "speedSubscription", fmt.Sprintf(AnkiVehicleIntent, id), speedTopic, true)
+	// <-stepCh
+
+	// client.Subscribe(fmt.Sprintf(baseAnkiSub, id, "laneSubscription"), 1, func(c mqtt.Client, m mqtt.Message) {
+	// 	var data map[string]any
+	// 	json.Unmarshal(m.Payload(), &data)
+	// 	if slices.Contains(data["value"].([]string), laneTopic) {
+	// 		stepCh <- struct{}{}
+	// 	}
+	// })
+	hyperdrive.SyncSubscription(client, "laneSubscription", fmt.Sprintf(AnkiVehicleIntent, id), connectTopic, true)
+	// <-stepCh
+
+	// Subscriptions are unreliable and don't work. Waiting a second instead.
+	time.Sleep(1 * time.Second)
+}
+
+func InstructionProcess(client mqtt.Client) {
+	// 1. get vehicle ID from UI
+	vehicleID := util.WaitForVehicleID(client)
+
+	// 2. Publish necessary instructions for DIT to work (connect, speed, lane)
+	connectEverything(client, vehicleID)
+
+	// 3. Connect to the vehicle and publish initial speed instruction
+	data, _ := json.Marshal(hyperdrive.ConnectPayload{Value: true})
+	client.Publish(connectTopic, 1, false, data)
+	time.Sleep(2 * time.Second)
+	speed(client, VelocityValue, AccelerationValue)
+
+	subscribeLaneChange(client)
+
+	select {} // block indefinetely
 }
 
 func main() {
@@ -140,7 +195,7 @@ func main() {
 		log.Fatal(token.Error())
 	}
 
-	subscribeLaneChange(client)
+	// SubscribeLaneChange(client, LaneChangeTopic)
 
 	// Keep running
 	select {}
