@@ -40,8 +40,6 @@ edges:
     target: 20.straight.top
   - source: 13.curve.inner
     target: 20.straight.bottom
-  - source: 13.curve.outer
-    target: 13.curve.inner
   - source: 20.straight.top
     target: 04.intersection.bottom 
   - source: 20.straight.bottom
@@ -58,8 +56,6 @@ edges:
     target: 16.curve.inner
   - source: 21.straight.top
     target: 21.straight.bottom
-  - source: 16.curve.outer
-    target: 16.curve.inner
   - source: 01.intersection.bottom
     target: 13.curve.outer 
   - source: 01.intersection.high
@@ -109,7 +105,7 @@ edges:
   - source: 06.intersection.bottom
     target: 10.straight.top
   - source: 06.intersection.high
-    target: 10.straight.low 
+    target: 10.straight.bottom
   - source: 10.straight.top
     target: 12.intersection.high
   - source: 10.straight.bottom
@@ -128,12 +124,16 @@ edges:
     target: 22.straight.top 
   - source: 18.intersection.low
     target: 22.straight.bottom 
+  - source: 22.straight.top
+    target: 22.straight.bottom 
   - source: 22.straight.top 
     target: 23.straight.top 
   - source: 22.straight.bottom 
     target: 23.straight.bottom 
   - source: 23.straight.top 
     target: 19.intersection.high 
+  - source: 23.straight.top 
+    target: 23.straight.bottom 
   - source: 23.straight.bottom
     target: 19.intersection.low 
   - source: 19.intersection.high
@@ -144,12 +144,16 @@ edges:
     target: 18.intersection.bottom 
   - source: 14.curve.inner
     target: 18.intersection.low 
+  - source: 14.curve.inner
+    target: 14.intersection.outer 
   - source: 14.curve.inner 
     target: 24.straight.top 
   - source: 14.curve.outer 
     target: 24.straight.bottom 
   - source: 24.straight.top
     target: 03.intersection.low 
+  - source: 24.straight.top
+    target: 24.straight.bottom
   - source: 24.straight.bottom
     target: 03.intersection.bottom 
   - source: 03.intersection.low 
@@ -162,6 +166,8 @@ edges:
     target: 25.straight.bottom
   - source: 25.straight.top 
     target: 15.curve.inner 
+  - source: 25.straight.top 
+    target: 25.straight.bottom 
   - source: 25.straight.bottom 
     target: 15.curve.outer 
   - source: 15.curve.inner 

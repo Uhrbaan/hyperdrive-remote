@@ -30,10 +30,11 @@ func main() {
 	log.Println("Connected to mosquitto broker on", rpiIp+":"+strconv.Itoa(mqttPort))
 
 	g := path.ImportYaml()
-	p, _ := graph.ShortestPath(g, "13.curve.outer", "02.intersection.low")
+	p, _ := graph.ShortestPath(g, "13.curve.outer", "03.intersection.high")
 	fmt.Println(p)
 
 	go path.VehicleTracking(client, g)
+	go path.PathCalculation(client, g)
 
 	path.UI(client)
 }

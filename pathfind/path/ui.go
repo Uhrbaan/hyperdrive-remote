@@ -44,7 +44,8 @@ func UI(client mqtt.Client) {
 	w := a.NewWindow("Visual Car Section Tracker")
 	w.Resize(fyne.NewSize(600, 500))
 
-	rectangles := map[int]*fyne.Animation{} // Used to store rectangle references according to the ID
+	absolute := map[int]*fyne.Animation{} // Used to store rectangle references according to the ID
+	preditction := map[int]*fyne.Animation{}
 	cells := []fyne.CanvasObject{}
 	var previousTarget *canvas.Rectangle = nil
 	for _, row := range gridSections {
@@ -62,7 +63,14 @@ func UI(client mqtt.Client) {
 				canvas.Refresh(rect)
 			})
 
-			rectangles[col] = animation
+			rect2 := canvas.NewRectangle(color.RGBA{0, 0, 0, 0})
+			animation2 := canvas.NewColorRGBAAnimation(color.RGBA{0, 255, 0, 200}, color.RGBA{0, 0, 0, 0}, time.Second*2, func(c color.Color) {
+				rect2.FillColor = c
+				canvas.Refresh(rect)
+			})
+
+			absolute[col] = animation
+			preditction[col] = animation2
 
 			// button, don't put one for the crossing, since it is not allowed to stop there.
 			if col != 0 {
@@ -79,23 +87,37 @@ func UI(client mqtt.Client) {
 					}
 					client.Publish(vehicleTargetTopic, 1, false, payload)
 				})
-				cells = append(cells, container.New(layout.NewStackLayout(), button, image, rect, targetRect))
+				cells = append(cells, container.New(layout.NewStackLayout(), button, image, rect, rect2, targetRect))
 			} else {
-				cells = append(cells, container.New(layout.NewStackLayout(), image, rect, targetRect))
+				cells = append(cells, container.New(layout.NewStackLayout(), image, rect, rect2, targetRect))
 			}
 
 		}
 	}
 
 	client.Subscribe(vehiclePositionTopic, 1, func(c mqtt.Client, m mqtt.Message) {
+		fmt.Println("Received a received an absolute position.")
 		var data tilePayload
 		err := json.Unmarshal(m.Payload(), &data)
 		if err != nil {
 			return
 		}
 
-		if _, ok := rectangles[data.ID]; ok {
-			rectangles[data.ID].Start()
+		if _, ok := absolute[data.ID]; ok {
+			absolute[data.ID].Start()
+		}
+	})
+
+	client.Subscribe(vehiclePredictionTopic, 1, func(c mqtt.Client, m mqtt.Message) {
+		fmt.Println("Received a prediction.")
+		var data tilePayload
+		err := json.Unmarshal(m.Payload(), &data)
+		if err != nil {
+			return
+		}
+
+		if _, ok := preditction[data.ID]; ok {
+			preditction[data.ID].Start()
 		}
 	})
 
