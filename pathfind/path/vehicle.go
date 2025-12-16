@@ -3,7 +3,7 @@ package path
 import (
 	"encoding/json"
 	"fmt"
-	"hyperdrive/remote/pathfind/lanechange"
+	"hyperdrive/remote/pathfind/instruct"
 	"hyperdrive/remote/pathfind/util"
 	"log"
 	"slices"
@@ -188,7 +188,7 @@ func VehicleTracking(client mqtt.Client, trackGraph graph.Graph[string, string])
 				continue
 			}
 
-			instruction := lanechange.LaneChangeMessage{}
+			instruction := instruct.LaneChangeMessage{}
 			// only turn on straight lines
 			if nextStep[:2] == currentNode[:2] {
 				// turn right
@@ -208,7 +208,7 @@ func VehicleTracking(client mqtt.Client, trackGraph graph.Graph[string, string])
 			instruction.Forward = true
 			// }
 
-			util.SendJSON(client, lanechange.InstructionTopic, instruction)
+			util.SendJSON(client, instruct.InstructionTopic, instruction)
 			log.Println("[Vehicle] To go to next step, going:", instruction)
 		}
 	}
